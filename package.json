@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "build": "elm make --output=test/elm.js test/TestWrapper.elm",
+    "test": "node test/simclimat"
+  },
   "devDependencies": {
     "@angular/core": "^10.1.1",
     "assert-diff": "^3.0.1",

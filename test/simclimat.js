@@ -7,6 +7,8 @@ var {
     CSimulationValues,
 } = require("simclimat-lib");
 
+assert.options.strict = true
+
 var elmTestWrapper = Elm.TestWrapper.init();
 
 test('gives the same results as simclimat-lib', async () => {
@@ -80,7 +82,7 @@ var runSimClimat = config => {
     delete output['modelVarsConstants'];
     delete output['emissions_coo_data'];
     delete output['concentrations_coo_data'];
-    delete output['temperature_data'];
+    delete output['temperature_data']['N'];
     delete output['niveau_calottes_data'];
     delete output['niveau_mer_data'];
     delete output['albedo_data'];

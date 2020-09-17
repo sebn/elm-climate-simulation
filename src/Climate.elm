@@ -4,53 +4,57 @@ module Climate exposing
     , simulate
     )
 
+import PhysicsConstants
+
 
 type alias Config =
-    { fixed_eau : Bool
+    { annee_debut : Float
+    , fixed_eau : Bool
     , fixed_concentration : Bool
     , debranche_biologie : Bool
     , fixed_ocean : Bool
     , debranche_ocean : Bool
     , fixed_albedo : Bool
-    , rapport_H2O_value : Int
-    , puit_bio_value : Int
-    , puit_oce_value : Int
-    , albedo_value : Int
-    , coo_concentr_value : Int
-    , puissance_soleil_value : Int
-    , distance_ts_value : Int
+    , rapport_H2O_value : Float
+    , puit_bio_value : Float
+    , puit_oce_value : Float
+    , albedo_value : Float
+    , coo_concentr_value : Float
+    , puissance_soleil_value : Float
+    , distance_ts_value : Float
     , obliquite_value : Float
     , excentricite_value : Float
     , precession_value : Float
-    , alteration_value : Int
-    , emit_anthro_coo_value : Int
+    , alteration_value : Float
+    , emit_anthro_coo_value : Float
     , volcan_value : Float
-    , stockage_biologique_value : Int
+    , stockage_biologique_value : Float
     }
 
 
 type alias Simulation =
     { -- CONFIG
-      fixed_eau : Bool
+      annee_debut : Float
+    , fixed_eau : Bool
     , fixed_concentration : Bool
     , debranche_biologie : Bool
     , fixed_ocean : Bool
     , debranche_ocean : Bool
     , fixed_albedo : Bool
-    , rapport_H2O_value : Int
-    , puit_bio_value : Int
-    , puit_oce_value : Int
-    , albedo_value : Int
-    , coo_concentr_value : Int
-    , puissance_soleil_value : Int
-    , distance_ts_value : Int
+    , rapport_H2O_value : Float
+    , puit_bio_value : Float
+    , puit_oce_value : Float
+    , albedo_value : Float
+    , coo_concentr_value : Float
+    , puissance_soleil_value : Float
+    , distance_ts_value : Float
     , obliquite_value : Float
     , excentricite_value : Float
     , precession_value : Float
-    , alteration_value : Int
-    , emit_anthro_coo_value : Int
+    , alteration_value : Float
+    , emit_anthro_coo_value : Float
     , volcan_value : Float
-    , stockage_biologique_value : Int
+    , stockage_biologique_value : Float
 
     -- RESULTS
     , temperature_data : DataArray Float
@@ -74,10 +78,10 @@ n =
     100
 
 
-temperature_data : DataArray Float
-temperature_data =
+temperature_data : Float -> DataArray Float
+temperature_data annee_debut =
     { datas = List.repeat (n + 1) 14.399999999999977
-    , past_datas = 0 :: List.repeat n 14.399999999999977
+    , past_datas = temperature_past_data annee_debut
     , resolution = 100
     , indice_min = 0
     , indice_max = 100
@@ -86,9 +90,44 @@ temperature_data =
     }
 
 
+temperature_past_data : Float -> List Float
+temperature_past_data annee_debut =
+    (::) 0 <|
+        case truncate annee_debut of
+            1750 ->
+                List.repeat n 14.399999999999977
+
+            _ ->
+                List.map temperature_past_value (List.range 1 100)
+
+
+temperature_past_value : Int -> Float
+temperature_past_value t =
+    PhysicsConstants.temperature_actuelle
+        - (tempsElem
+            / internEcheance
+            * toFloat t
+            * PhysicsConstants.deltaT_last_century
+          )
+        -- FIXME: converting to then from kelvins introduces rounding errors
+        + PhysicsConstants.tKelvin
+        - PhysicsConstants.tKelvin
+
+
+tempsElem : Float
+tempsElem =
+    1.0
+
+
+internEcheance : Float
+internEcheance =
+    100.0
+
+
 simulate : Config -> Simulation
 simulate config =
-    { fixed_eau = config.fixed_eau
+    { annee_debut = config.annee_debut
+    , fixed_eau = config.fixed_eau
     , fixed_concentration = config.fixed_concentration
     , debranche_biologie = config.debranche_biologie
     , fixed_ocean = config.fixed_ocean
@@ -108,5 +147,5 @@ simulate config =
     , emit_anthro_coo_value = config.emit_anthro_coo_value
     , volcan_value = config.volcan_value
     , stockage_biologique_value = config.stockage_biologique_value
-    , temperature_data = temperature_data
+    , temperature_data = temperature_data config.annee_debut
     }

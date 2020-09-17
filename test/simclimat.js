@@ -34,14 +34,14 @@ var assertSameResultsAsync = async sv => {
     );
 };
 
-var runElmClimateAsync = config =>
+var runElmClimateAsync = sv =>
     new Promise((resolve, reject) => {
         let unsubscribe;
         try {
-            unsubscribe = elmTestWrapper.ports.output.subscribe(sv => {
-                resolve(normalizeSimulationValues(sv));
+            unsubscribe = elmTestWrapper.ports.output.subscribe(svOut => {
+                resolve(normalizeSimulationValues(svOut));
             });
-            elmTestWrapper.ports.input.send(config);
+            elmTestWrapper.ports.input.send(sv);
         } catch (err) {
             reject(err);
         } finally {
@@ -89,7 +89,7 @@ var normalizeSimulationValues = sv => {
     // delete sv['temperature_data'];
     if (sv['temperature_data']) {
         delete sv['temperature_data']['N'];
-        delete sv['temperature_data']['datas'];
+        // delete sv['temperature_data']['datas'];
     }
     delete sv['niveau_calottes_data'];
     delete sv['niveau_mer_data'];

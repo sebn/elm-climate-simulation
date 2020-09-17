@@ -4,6 +4,7 @@ module Climate exposing
     , simulate
     )
 
+import ExperienceValues as EV exposing (ExperienceValues)
 import PhysicsConstants
 
 
@@ -78,9 +79,9 @@ n =
     100
 
 
-temperature_data : Float -> DataArray Float
-temperature_data annee_debut =
-    { datas = List.repeat (n + 1) 14.399999999999977
+temperature_data_array : Float -> DataArray Float
+temperature_data_array annee_debut =
+    { datas = temperature_data annee_debut
     , past_datas = temperature_past_data annee_debut
     , resolution = 100
     , indice_min = 0
@@ -88,6 +89,51 @@ temperature_data annee_debut =
     , imin = 0
     , imax = 100
     }
+
+
+temperature_data : Float -> List Float
+temperature_data annee_debut =
+    let
+        ev =
+            EV.fromEcheance 10000
+
+        t0 =
+            (+) PhysicsConstants.tKelvin <|
+                case truncate annee_debut of
+                    1750 ->
+                        PhysicsConstants.temperature_1750
+
+                    _ ->
+                        PhysicsConstants.temperature_actuelle
+    in
+    (::) t0 <|
+        List.repeat n
+            -- 14.399999999999977
+            (dt ev)
+
+
+dt : ExperienceValues -> Float
+dt ev =
+    EV.temps_elem ev / toFloat (niter ev)
+
+
+niter : ExperienceValues -> Int
+niter ev =
+    max 4 (truncate (3 * exp (0.3 * log (EV.temps_elem ev))))
+
+
+exp : Float -> Float
+exp =
+    (^) e
+
+
+log : Float -> Float
+log =
+    logBase e
+
+
+
+--  Math.max(4, Math.trunc(3 * Math.exp(0.3 * Math.log(this.experienceValues.temps_elem()))));
 
 
 temperature_past_data : Float -> List Float
@@ -147,5 +193,5 @@ simulate config =
     , emit_anthro_coo_value = config.emit_anthro_coo_value
     , volcan_value = config.volcan_value
     , stockage_biologique_value = config.stockage_biologique_value
-    , temperature_data = temperature_data config.annee_debut
+    , temperature_data = temperature_data_array config.annee_debut
     }

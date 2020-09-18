@@ -97,20 +97,42 @@ temperature_data config =
     let
         ev =
             EV.fromEcheance 10000
-
-        t0 =
-            (+) PhysicsConstants.tKelvin <|
-                case truncate config.annee_debut of
-                    1750 ->
-                        PhysicsConstants.temperature_1750
-
-                    _ ->
-                        PhysicsConstants.temperature_actuelle
     in
-    (::) t0 <|
-        List.repeat n
-            -- 14.399999999999977
-            (alteration_max config)
+    zT_ancien config
+        :: (List.range 1 n
+                -- 14.399999999999977
+                |> List.map (phieq config)
+           )
+
+
+phieq : Config -> Int -> Float
+phieq sv t =
+    let
+        -- FIXME
+        zT =
+            toFloat t + PhysicsConstants.tKelvin
+    in
+    (ModelPhysicsConstants.a_calottes
+        * (zT - PhysicsConstants.tKelvin)
+        + ModelPhysicsConstants.b_calottes
+        + PhysicsConstants.c_calottes
+        * (insol65N sv
+            - ModelPhysicsConstants.insol_actuel
+          )
+    )
+        |> min PhysicsConstants.niveau_calottes_max
+        |> max PhysicsConstants.niveau_calottes_min
+
+
+zT_ancien : Config -> Float
+zT_ancien sv =
+    (+) PhysicsConstants.tKelvin <|
+        case truncate sv.annee_debut of
+            1750 ->
+                PhysicsConstants.temperature_1750
+
+            _ ->
+                PhysicsConstants.temperature_actuelle
 
 
 alteration_max : Config -> Float

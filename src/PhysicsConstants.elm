@@ -1,5 +1,6 @@
 module PhysicsConstants exposing
     ( b_ocean
+    , concentration_coo_1750
     , deltaT_last_century
     , excentricite_actuel
     , lat_Mil
@@ -9,12 +10,18 @@ module PhysicsConstants exposing
     , tKelvin
     , temperature_1750
     , temperature_actuelle
+    , volcanisme_actuel
     )
 
 
 b_ocean : Float
 b_ocean =
     1 / 5000.0
+
+
+concentration_coo_1750 : Int
+concentration_coo_1750 =
+    280
 
 
 excentricite_actuel : Float
@@ -62,3 +69,10 @@ deltaT_last_century =
 tKelvin : Float
 tKelvin =
     273.0
+
+
+{-| en Gt/an
+-}
+volcanisme_actuel : Float
+volcanisme_actuel =
+    0.083

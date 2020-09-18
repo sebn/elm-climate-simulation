@@ -1,5 +1,6 @@
 module PhysicsConstants exposing
-    ( deltaT_last_century
+    ( b_ocean
+    , deltaT_last_century
     , excentricite_actuel
     , lat_Mil
     , pi
@@ -9,6 +10,11 @@ module PhysicsConstants exposing
     , temperature_1750
     , temperature_actuelle
     )
+
+
+b_ocean : Float
+b_ocean =
+    1 / 5000.0
 
 
 excentricite_actuel : Float

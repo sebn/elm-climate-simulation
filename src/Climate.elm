@@ -5,6 +5,7 @@ module Climate exposing
     )
 
 import ExperienceValues as EV exposing (ExperienceValues)
+import ModelPhysicsConstants
 import PhysicsConstants
 
 
@@ -109,7 +110,12 @@ temperature_data config =
     (::) t0 <|
         List.repeat n
             -- 14.399999999999977
-            (b_ocean config)
+            (alteration_max config)
+
+
+alteration_max : Config -> Float
+alteration_max sv =
+    ModelPhysicsConstants.c_alteration_naturel * (sv.alteration_value / 100.0)
 
 
 b_ocean : Config -> Float

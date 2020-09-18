@@ -109,7 +109,19 @@ temperature_data config =
     (::) t0 <|
         List.repeat n
             -- 14.399999999999977
-            (insol65N config)
+            (b_ocean config)
+
+
+b_ocean : Config -> Float
+b_ocean sv =
+    if sv.debranche_ocean then
+        0
+
+    else if sv.fixed_ocean then
+        0
+
+    else
+        PhysicsConstants.b_ocean
 
 
 {-| Insolation 65º lat. N

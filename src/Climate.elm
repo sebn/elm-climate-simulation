@@ -101,8 +101,22 @@ temperature_data config =
     zT_ancien config
         :: (List.range 1 n
                 -- 14.399999999999977
-                |> List.map (phieq config)
+                |> List.map (tau_niveau_calottes config)
            )
+
+
+tau_niveau_calottes : Config -> Int -> Float
+tau_niveau_calottes sv t =
+    let
+        -- FIXME
+        zphig_ancien =
+            50.0
+    in
+    if zphig_ancien < phieq sv t then
+        PhysicsConstants.tau_niveau_calottes_deglacement
+
+    else
+        PhysicsConstants.tau_niveau_calottes_englacement
 
 
 phieq : Config -> Int -> Float

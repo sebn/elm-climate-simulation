@@ -14,6 +14,8 @@ module PhysicsConstants exposing
     , precession_actuel
     , puissance_recue_zero
     , tKelvin
+    , tau_niveau_calottes_deglacement
+    , tau_niveau_calottes_englacement
     , temperature_1750
     , temperature_LGM
     , temperature_actuelle
@@ -111,6 +113,18 @@ deltaT_last_century =
 tKelvin : Float
 tKelvin =
     273.0
+
+
+tau_niveau_calottes_deglacement : Float
+tau_niveau_calottes_deglacement =
+    -- FIXME: same as tau_niveau_calottes_englacement? why?
+    4000
+
+
+tau_niveau_calottes_englacement : Float
+tau_niveau_calottes_englacement =
+    -- FIXME: same as tau_niveau_calottes_deglacement? why?
+    4000
 
 
 {-| en Gt/an

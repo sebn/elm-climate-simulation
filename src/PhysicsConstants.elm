@@ -1,9 +1,21 @@
 module PhysicsConstants exposing
     ( deltaT_last_century
+    , lat_Mil
+    , pi
     , tKelvin
     , temperature_1750
     , temperature_actuelle
     )
+
+
+lat_Mil : Int
+lat_Mil =
+    65
+
+
+pi : Float
+pi =
+    Basics.pi
 
 
 temperature_1750 : Float

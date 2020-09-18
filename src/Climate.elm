@@ -79,10 +79,10 @@ n =
     100
 
 
-temperature_data_array : Float -> DataArray Float
-temperature_data_array annee_debut =
-    { datas = temperature_data annee_debut
-    , past_datas = temperature_past_data annee_debut
+temperature_data_array : Config -> DataArray Float
+temperature_data_array config =
+    { datas = temperature_data config
+    , past_datas = temperature_past_data config.annee_debut
     , resolution = 100
     , indice_min = 0
     , indice_max = 100
@@ -91,15 +91,15 @@ temperature_data_array annee_debut =
     }
 
 
-temperature_data : Float -> List Float
-temperature_data annee_debut =
+temperature_data : Config -> List Float
+temperature_data config =
     let
         ev =
             EV.fromEcheance 10000
 
         t0 =
             (+) PhysicsConstants.tKelvin <|
-                case truncate annee_debut of
+                case truncate config.annee_debut of
                     1750 ->
                         PhysicsConstants.temperature_1750
 
@@ -109,7 +109,17 @@ temperature_data annee_debut =
     (::) t0 <|
         List.repeat n
             -- 14.399999999999977
-            (dt ev)
+            (delta_angle config)
+
+
+delta_angle : Config -> Float
+delta_angle sv =
+    abs
+        ((toFloat PhysicsConstants.lat_Mil - sv.obliquite_value)
+            / 360
+            * 2
+            * PhysicsConstants.pi
+        )
 
 
 dt : ExperienceValues -> Float
@@ -193,5 +203,5 @@ simulate config =
     , emit_anthro_coo_value = config.emit_anthro_coo_value
     , volcan_value = config.volcan_value
     , stockage_biologique_value = config.stockage_biologique_value
-    , temperature_data = temperature_data_array config.annee_debut
+    , temperature_data = temperature_data_array config
     }

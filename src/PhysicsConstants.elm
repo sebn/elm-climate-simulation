@@ -2,6 +2,7 @@ module PhysicsConstants exposing
     ( deltaT_last_century
     , lat_Mil
     , pi
+    , puissance_recue_zero
     , tKelvin
     , temperature_1750
     , temperature_actuelle
@@ -16,6 +17,11 @@ lat_Mil =
 pi : Float
 pi =
     Basics.pi
+
+
+puissance_recue_zero : Float
+puissance_recue_zero =
+    1370.0 / 4.0
 
 
 temperature_1750 : Float

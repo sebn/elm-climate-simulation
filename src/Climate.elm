@@ -109,7 +109,7 @@ temperature_data config =
     (::) t0 <|
         List.repeat n
             -- 14.399999999999977
-            (delta_angle config)
+            (fin0 config)
 
 
 delta_angle : Config -> Float
@@ -120,6 +120,15 @@ delta_angle sv =
             * 2
             * PhysicsConstants.pi
         )
+
+
+fin0 : Config -> Float
+fin0 sv =
+    -- Fin0 = CPhysicsConstants.puissance_recue_zero * (this.simulationValues.puissance_soleil_value / 100.) / (this.simulationValues.distance_ts_value / 100) / (this.simulationValues.distance_ts_value / 100);
+    PhysicsConstants.puissance_recue_zero
+        * (sv.puissance_soleil_value / 100.0)
+        / (sv.distance_ts_value / 100)
+        / (sv.distance_ts_value / 100)
 
 
 dt : ExperienceValues -> Float

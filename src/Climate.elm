@@ -109,7 +109,30 @@ temperature_data config =
     (::) t0 <|
         List.repeat n
             -- 14.399999999999977
-            (fin0 config)
+            (insol65N config)
+
+
+{-| Insolation 65º lat. N
+-}
+insol65N : Config -> Float
+insol65N sv =
+    fin0 sv
+        * cos (delta_angle sv)
+        * exp
+            (2
+                * log
+                    ((1
+                        - PhysicsConstants.excentricite_actuel
+                        * 0.5
+                        * sin (-PhysicsConstants.precession_actuel / 180 * pi)
+                     )
+                        / (1
+                            - (0.3 * sv.excentricite_value + 0.7 * PhysicsConstants.excentricite_actuel)
+                            * 0.5
+                            * sin (-sv.precession_value / 180 * pi)
+                          )
+                    )
+            )
 
 
 delta_angle : Config -> Float

@@ -1,12 +1,19 @@
 module PhysicsConstants exposing
     ( deltaT_last_century
+    , excentricite_actuel
     , lat_Mil
     , pi
+    , precession_actuel
     , puissance_recue_zero
     , tKelvin
     , temperature_1750
     , temperature_actuelle
     )
+
+
+excentricite_actuel : Float
+excentricite_actuel =
+    0.0167
 
 
 lat_Mil : Int
@@ -17,6 +24,13 @@ lat_Mil =
 pi : Float
 pi =
     Basics.pi
+
+
+precession_actuel : Float
+precession_actuel =
+    -- on prend la même precession que LMDZ
+    -- la formule de insol65N n'a pas été modifiée car 2 bugs se compensaient
+    102.7
 
 
 puissance_recue_zero : Float

@@ -30,7 +30,7 @@ test('starting from now', async () => {
 var assertSameResultsAsync = async sv => {
     assert.deepEqual(
         runSimClimat(sv),
-        await runElmClimateAsync(sv)
+        logSimulationValues(await runElmClimateAsync(sv))
     );
 };
 
@@ -71,7 +71,8 @@ var runSimClimat = sv => {
 };
 
 var logSimulationValues = sv => {
-    console.log(JSON.stringify(normalizeSimulationValues(sv), null, 2));
+    // console.log(JSON.stringify(normalizeSimulationValues(sv), null, 2));
+    return sv;
 }
 
 var normalizeSimulationValues = sv => {

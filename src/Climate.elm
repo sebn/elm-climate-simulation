@@ -96,6 +96,7 @@ temperature_data_array sv =
 type alias Ancien =
     { alteration_max : Float
     , b_ocean : Float
+    , fin : Float
     , insol65N : Float
     , phieq : Float
     , tau_niveau_calottes : Float
@@ -117,6 +118,7 @@ boucleT sv =
         ancien =
             { alteration_max = alteration_max sv
             , b_ocean = b_ocean sv
+            , fin = fin0 sv
             , insol65N = insol65N sv
             , phieq = calcul_phieq sv (zT0 sv)
             , tau_niveau_calottes = tau_niveau_calottes sv 0
@@ -199,9 +201,13 @@ calculsBoucleIter sv t iter ancien =
     let
         zT =
             ancien.zT
+
+        zalbedo =
+            calcul_albedo sv (zphig sv t ancien)
     in
     { alteration_max = alteration_max sv
     , b_ocean = b_ocean sv
+    , fin = calcul_fin sv zalbedo
     , insol65N = insol65N sv
     , phieq = calcul_phieq sv zT
     , tau_niveau_calottes = tau_niveau_calottes sv t
@@ -209,12 +215,17 @@ calculsBoucleIter sv t iter ancien =
     , zC_alteration = zC_alteration sv ancien
     , zT = zT
     , zT_ancien = ancien.zT
-    , zalbedo = calcul_albedo sv (zphig sv t ancien)
+    , zalbedo = zalbedo
     , zphig = zphig sv t ancien
     , zphig_ancien = ancien.zphig
     , zpuit_bio = zpuit_bio sv
     , zpuit_oce = calcul_zpuit_oce sv zT
     }
+
+
+calcul_fin : Config -> Float -> Float
+calcul_fin sv zalbedo =
+    fin0 sv * (1 - zalbedo)
 
 
 calcul_albedo : Config -> Float -> Float

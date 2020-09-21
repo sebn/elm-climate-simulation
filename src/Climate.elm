@@ -104,6 +104,7 @@ type alias Ancien =
     , zT_ancien : Float
     , zphig : Float
     , zphig_ancien : Float
+    , zpuit_bio : Float
     , zpuit_oce : Float
     }
 
@@ -122,6 +123,7 @@ boucleT sv =
             , zT_ancien = zT0 sv
             , zphig = zphig0 sv
             , zphig_ancien = zphig0 sv
+            , zpuit_bio = zpuit_bio sv
             , zpuit_oce = 0
             }
     in
@@ -204,8 +206,22 @@ calculsBoucleIter sv t iter ancien =
     , zT_ancien = ancien.zT
     , zphig = zphig sv t ancien
     , zphig_ancien = ancien.zphig
+    , zpuit_bio = zpuit_bio sv
     , zpuit_oce = calcul_zpuit_oce sv zT
     }
+
+
+zpuit_bio : Config -> Float
+zpuit_bio sv =
+    if sv.fixed_concentration then
+        -- undefined in SimClimat
+        0
+
+    else if sv.debranche_biologie then
+        0
+
+    else
+        sv.puit_bio_value / 100
 
 
 calcul_zpuit_oce : Config -> Float -> Float

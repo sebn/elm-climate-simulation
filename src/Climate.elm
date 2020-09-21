@@ -103,6 +103,7 @@ type alias Ancien =
     , zC_alteration : Float
     , zT : Float
     , zT_ancien : Float
+    , zalbedo : Float
     , zphig : Float
     , zphig_ancien : Float
     , zpuit_bio : Float
@@ -123,6 +124,7 @@ boucleT sv =
             , zC_alteration = 0
             , zT = zT0 sv
             , zT_ancien = zT0 sv
+            , zalbedo = 0
             , zphig = zphig0 sv
             , zphig_ancien = zphig0 sv
             , zpuit_bio = zpuit_bio sv
@@ -207,11 +209,43 @@ calculsBoucleIter sv t iter ancien =
     , zC_alteration = zC_alteration sv ancien
     , zT = zT
     , zT_ancien = ancien.zT
+    , zalbedo = calcul_albedo sv (zphig sv t ancien)
     , zphig = zphig sv t ancien
     , zphig_ancien = ancien.zphig
     , zpuit_bio = zpuit_bio sv
     , zpuit_oce = calcul_zpuit_oce sv zT
     }
+
+
+calcul_albedo : Config -> Float -> Float
+calcul_albedo sv zphig_ =
+    -- if (this.simulationValues.fixed_albedo) {
+    --     zalbedo = this.simulationValues.albedo_value / 100.; // conversion albedo en % en albedo en unité
+    --     for (var t = 0; t <= this.experienceValues.indice_max(); t++) {
+    --         this.simulationValues.albedo_data.set(t, this.simulationValues.albedo_value);
+    --     }
+    -- }
+    -- else {
+    --     this.simulationValues.albedo_data.set(0, this.calcul_albedo(this.simulationValues.niveau_calottes_data.get(0)) * 100.);
+    -- }
+    -- ...
+    -- if (!this.simulationValues.fixed_albedo) {
+    --     CLogger.log('Method modelExecute: calcul_albedo: albedo_ter = ' + CPhysicsConstants.albedo_ter);
+    --     zalbedo = this.calcul_albedo(zphig);
+    if sv.fixed_albedo then
+        sv.albedo_value / 100
+
+    else if zphig_ > PhysicsConstants.phig_crit then
+        ModelPhysicsConstants.albedo_crit
+            + (zphig_ - PhysicsConstants.phig_crit)
+            / (PhysicsConstants.niveau_calottes_max - PhysicsConstants.phig_crit)
+            * (PhysicsConstants.albedo_ter - ModelPhysicsConstants.albedo_crit)
+
+    else
+        PhysicsConstants.albedo_glace_const
+            + (zphig_ - PhysicsConstants.niveau_calottes_min)
+            / (PhysicsConstants.phig_crit - PhysicsConstants.niveau_calottes_min)
+            * (ModelPhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
 
 
 zC_alteration : Config -> Ancien -> Float

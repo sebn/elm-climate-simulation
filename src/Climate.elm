@@ -102,6 +102,7 @@ type alias Ancien =
     , tau_niveau_calottes : Float
     , zB_ocean : Float
     , zC_alteration : Float
+    , zC_stockage : Float
     , zT : Float
     , zT_ancien : Float
     , zalbedo : Float
@@ -130,6 +131,7 @@ boucleT sv =
             , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
             , zB_ocean = 0
             , zC_alteration = 0
+            , zC_stockage = 0
             , zT = zT0
             , zT_ancien = zT0
             , zalbedo = 0
@@ -223,6 +225,7 @@ calculsBoucleIter sv t iter ancien =
         , tau_niveau_calottes = tau_niveau_calottes
         , zB_ocean = calcul_zB_ocean ancien
         , zC_alteration = calcul_zC_alteration ancien.alteration_max ancien.zphig
+        , zC_stockage = calcul_zC_stockage sv ancien.zphig
         , zT = zT
         , zT_ancien = ancien.zT
         , zalbedo = zalbedo
@@ -230,6 +233,13 @@ calculsBoucleIter sv t iter ancien =
         , zphig_ancien = ancien.zphig
         , zpuit_oce = calcul_zpuit_oce sv zT
     }
+
+
+calcul_zC_stockage : Config -> Float -> Float
+calcul_zC_stockage sv zphig_ancien =
+    calcul_zC_alteration
+        (-sv.stockage_biologique_value * 1.0e-3)
+        zphig_ancien
 
 
 calcul_fin : Config -> Float -> Float

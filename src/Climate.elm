@@ -96,6 +96,7 @@ temperature_data_array sv =
 type alias Ancien =
     { alteration_max : Float
     , b_ocean : Float
+    , fdegaz : Float
     , fin : Float
     , insol65N : Float
     , phieq : Float
@@ -103,6 +104,7 @@ type alias Ancien =
     , zB_ocean : Float
     , zC_alteration : Float
     , zC_stockage : Float
+    , zCO2eq_oce : Float
     , zT : Float
     , zT_ancien : Float
     , zalbedo : Float
@@ -111,6 +113,7 @@ type alias Ancien =
     , zpuit_bio : Float
     , zpuit_oce : Float
     , zsomme_C : Float
+    , zsomme_flux_const : Float
     }
 
 
@@ -126,6 +129,7 @@ boucleT sv =
         ancien =
             { alteration_max = calcul_alteration_max sv
             , b_ocean = calcul_b_ocean sv
+            , fdegaz = 0
             , fin = calcul_fin0 sv
             , insol65N = insol65N sv
             , phieq = calcul_phieq sv zT0
@@ -133,6 +137,7 @@ boucleT sv =
             , zB_ocean = 0
             , zC_alteration = 0
             , zC_stockage = 0
+            , zCO2eq_oce = 0
             , zT = zT0
             , zT_ancien = zT0
             , zalbedo = 0
@@ -141,6 +146,7 @@ boucleT sv =
             , zpuit_bio = calcul_zpuit_bio sv
             , zpuit_oce = 0
             , zsomme_C = 0
+            , zsomme_flux_const = 0
             }
     in
     List.range 1 n
@@ -232,14 +238,19 @@ calculsBoucleIter sv t iter ancien =
 
         zB_ocean =
             calcul_zB_ocean ancien
+
+        zsomme_flux_const =
+            calcul_zsomme_flux_const sv zpuit_oce ancien.zpuit_bio zB_ocean ancien.zT
     in
     { ancien
-        | fin = calcul_fin sv zalbedo
+        | fdegaz = calcul_fdegaz sv ancien.zT
+        , fin = calcul_fin sv zalbedo
         , phieq = calcul_phieq sv zT
         , tau_niveau_calottes = tau_niveau_calottes
         , zB_ocean = zB_ocean
         , zC_alteration = zC_alteration
         , zC_stockage = zC_stockage
+        , zCO2eq_oce = calcul_zCO2eq_oce ancien.zT
         , zT = zT
         , zT_ancien = ancien.zT
         , zalbedo = zalbedo
@@ -247,9 +258,55 @@ calculsBoucleIter sv t iter ancien =
         , zphig_ancien = ancien.zphig
         , zpuit_oce = zpuit_oce
         , zsomme_C = calcul_zsomme_C zpuit_oce ancien.zpuit_bio zC_alteration zC_stockage zB_ocean
+        , zsomme_flux_const = zsomme_flux_const
     }
 
 
+calcul_zsomme_flux_const sv zpuit_oce zpuit_bio zB_ocean zT_ancien =
+    max 0 (min 1 (1 - zpuit_oce - zpuit_bio))
+        * (sv.emit_anthro_coo_value + sv.volcan_value)
+        + max 0 (min 1 (1 - zpuit_bio))
+        * zB_ocean
+        * calcul_zCO2eq_oce zT_ancien
+        + calcul_fdegaz sv zT_ancien
+
+
+calcul_zCO2eq_oce : Float -> Float
+calcul_zCO2eq_oce zT =
+    let
+        c =
+            15
+
+        b =
+            (PhysicsConstants.concentration_coo_glaciaire - toFloat PhysicsConstants.concentration_coo_1750)
+                / (atan (PhysicsConstants.temperature_LGM - c)
+                    - atan (PhysicsConstants.temperature_1750 - c)
+                  )
+
+        a =
+            PhysicsConstants.concentration_coo_glaciaire
+                - b
+                * atan (PhysicsConstants.temperature_LGM - c)
+    in
+    a
+        + b
+        * atan (zT - PhysicsConstants.tKelvin - c)
+        + max 0 (5 * (zT - PhysicsConstants.tKelvin - c))
+
+
+calcul_fdegaz : Config -> Float -> Float
+calcul_fdegaz sv zT =
+    if sv.debranche_ocean || sv.fixed_ocean then
+        0
+
+    else if zT - PhysicsConstants.tKelvin > PhysicsConstants.tcrit_oce then
+        (zT - PhysicsConstants.tcrit_oce - PhysicsConstants.tKelvin) * PhysicsConstants.dFdegaz
+
+    else
+        0
+
+
+calcul_zsomme_C : Float -> Float -> Float -> Float -> Float -> Float
 calcul_zsomme_C zpuit_oce zpuit_bio zC_alteration zC_stockage zB_ocean =
     max 0 (min 1 (1 - zpuit_oce - zpuit_bio))
         * (zC_alteration + zC_stockage)

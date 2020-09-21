@@ -104,6 +104,7 @@ var normalizeSimulationValues = sv => {
             delete sv['temperature_data']['datas'][0]['zphig'];
             delete sv['temperature_data']['datas'][0]['zphig_ancien'];
             delete sv['temperature_data']['datas'][0]['zpuit_oce'];
+            delete sv['temperature_data']['datas'][0]['zsomme_C'];
         }
     }
     delete sv['niveau_calottes_data'];

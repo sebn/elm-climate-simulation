@@ -110,6 +110,7 @@ type alias Ancien =
     , zphig_ancien : Float
     , zpuit_bio : Float
     , zpuit_oce : Float
+    , zsomme_C : Float
     }
 
 
@@ -137,8 +138,9 @@ boucleT sv =
             , zalbedo = 0
             , zphig = zphig0
             , zphig_ancien = zphig0
-            , zpuit_bio = zpuit_bio sv
+            , zpuit_bio = calcul_zpuit_bio sv
             , zpuit_oce = 0
+            , zsomme_C = 0
             }
     in
     List.range 1 n
@@ -218,21 +220,41 @@ calculsBoucleIter sv t iter ancien =
 
         zalbedo =
             calcul_albedo sv zphig
+
+        zC_alteration =
+            calcul_zC_alteration ancien.alteration_max ancien.zphig
+
+        zpuit_oce =
+            calcul_zpuit_oce sv zT
+
+        zC_stockage =
+            calcul_zC_stockage sv ancien.zphig
+
+        zB_ocean =
+            calcul_zB_ocean ancien
     in
     { ancien
         | fin = calcul_fin sv zalbedo
         , phieq = calcul_phieq sv zT
         , tau_niveau_calottes = tau_niveau_calottes
-        , zB_ocean = calcul_zB_ocean ancien
-        , zC_alteration = calcul_zC_alteration ancien.alteration_max ancien.zphig
-        , zC_stockage = calcul_zC_stockage sv ancien.zphig
+        , zB_ocean = zB_ocean
+        , zC_alteration = zC_alteration
+        , zC_stockage = zC_stockage
         , zT = zT
         , zT_ancien = ancien.zT
         , zalbedo = zalbedo
         , zphig = zphig
         , zphig_ancien = ancien.zphig
-        , zpuit_oce = calcul_zpuit_oce sv zT
+        , zpuit_oce = zpuit_oce
+        , zsomme_C = calcul_zsomme_C zpuit_oce ancien.zpuit_bio zC_alteration zC_stockage zB_ocean
     }
+
+
+calcul_zsomme_C zpuit_oce zpuit_bio zC_alteration zC_stockage zB_ocean =
+    max 0 (min 1 (1 - zpuit_oce - zpuit_bio))
+        * (zC_alteration + zC_stockage)
+        - max 0 (min 1 (1 - zpuit_bio))
+        * zB_ocean
 
 
 calcul_zC_stockage : Config -> Float -> Float
@@ -278,8 +300,8 @@ calcul_albedo sv zphig =
             * (ModelPhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
 
 
-zpuit_bio : Config -> Float
-zpuit_bio sv =
+calcul_zpuit_bio : Config -> Float
+calcul_zpuit_bio sv =
     if sv.fixed_concentration then
         -- undefined in SimClimat
         0

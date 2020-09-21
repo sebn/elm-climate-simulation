@@ -30,7 +30,7 @@ test('starting from now', async () => {
 var assertSameResultsAsync = async sv => {
     assert.deepEqual(
         runSimClimat(sv),
-        logSimulationValues(await runElmClimateAsync(sv))
+        await runElmClimateAsync(sv)
     );
 };
 
@@ -91,6 +91,14 @@ var normalizeSimulationValues = sv => {
     if (sv['temperature_data']) {
         delete sv['temperature_data']['N'];
         // delete sv['temperature_data']['datas'];
+        if (sv['temperature_data']['datas'][0]) {
+            delete sv['temperature_data']['datas'][0]['alteration_max'];
+            delete sv['temperature_data']['datas'][0]['phieq'];
+            delete sv['temperature_data']['datas'][0]['tau_niveau_calottes'];
+            delete sv['temperature_data']['datas'][0]['zT'];
+            delete sv['temperature_data']['datas'][0]['zphig'];
+            delete sv['temperature_data']['datas'][0]['zphig_ancien'];
+        }
     }
     delete sv['niveau_calottes_data'];
     delete sv['niveau_mer_data'];

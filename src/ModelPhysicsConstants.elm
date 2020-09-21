@@ -3,6 +3,7 @@ module ModelPhysicsConstants exposing
     , b_calottes
     , c_alteration_naturel
     , insol_actuel
+    , niveau_calottes_actuel
     )
 
 {-| "calculate calculated physics constants"
@@ -45,3 +46,24 @@ delta_angle_actuel =
 insol_actuel : Float
 insol_actuel =
     PhysicsConstants.puissance_recue_zero * cos delta_angle_actuel
+
+
+niveau_calottes_actuel : Float
+niveau_calottes_actuel =
+    PhysicsConstants.niveau_calottes_1750
+        + (a_calottes
+            * PhysicsConstants.temperature_actuelle
+            + b_calottes
+            - PhysicsConstants.niveau_calottes_1750
+          )
+        * (1
+            - exp
+                (-100
+                    / PhysicsConstants.tau_niveau_calottes_deglacement
+                )
+          )
+
+
+exp : Float -> Float
+exp =
+    (^) e

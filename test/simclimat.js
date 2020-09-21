@@ -93,6 +93,7 @@ var normalizeSimulationValues = sv => {
         // delete sv['temperature_data']['datas'];
         if (sv['temperature_data']['datas'][0]) {
             delete sv['temperature_data']['datas'][0]['alteration_max'];
+            delete sv['temperature_data']['datas'][0]['fin'];
             delete sv['temperature_data']['datas'][0]['phieq'];
             delete sv['temperature_data']['datas'][0]['tau_niveau_calottes'];
             delete sv['temperature_data']['datas'][0]['zB_ocean'];

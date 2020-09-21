@@ -1,5 +1,6 @@
 module ModelPhysicsConstants exposing
     ( a_calottes
+    , albedo_crit
     , b_calottes
     , c_alteration_naturel
     , insol_actuel
@@ -21,6 +22,19 @@ a_calottes =
     (PhysicsConstants.niveau_calottes_1750 - PhysicsConstants.niveau_calottes_LGM_noinsol)
         / (PhysicsConstants.temperature_1750 - PhysicsConstants.temperature_LGM)
         * 0.8
+
+
+albedo_crit : Float
+albedo_crit =
+    (PhysicsConstants.albedo_1750
+        - PhysicsConstants.albedo_ter
+        * (PhysicsConstants.niveau_calottes_1750 - PhysicsConstants.phig_crit)
+        / (PhysicsConstants.niveau_calottes_max - PhysicsConstants.phig_crit)
+    )
+        / (1
+            - (PhysicsConstants.niveau_calottes_1750 - PhysicsConstants.phig_crit)
+            / (PhysicsConstants.niveau_calottes_max - PhysicsConstants.phig_crit)
+          )
 
 
 b_calottes : Float

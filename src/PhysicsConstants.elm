@@ -1,5 +1,8 @@
 module PhysicsConstants exposing
-    ( b_ocean
+    ( albedo_1750
+    , albedo_glace_const
+    , albedo_ter
+    , b_ocean
     , c_calottes
     , concentration_coo_1750
     , deltaT_last_century
@@ -11,6 +14,7 @@ module PhysicsConstants exposing
     , niveau_calottes_max
     , niveau_calottes_min
     , obliquite_actuel
+    , phig_crit
     , pi
     , precession_actuel
     , puissance_recue_zero
@@ -25,6 +29,21 @@ module PhysicsConstants exposing
     , temperature_actuelle
     , volcanisme_actuel
     )
+
+
+albedo_1750 : Float
+albedo_1750 =
+    0.33
+
+
+albedo_glace_const : Float
+albedo_glace_const =
+    0.9
+
+
+albedo_ter : Float
+albedo_ter =
+    0.25
 
 
 b_ocean : Float
@@ -80,6 +99,11 @@ niveau_calottes_min =
 obliquite_actuel : Float
 obliquite_actuel =
     23.5
+
+
+phig_crit : Float
+phig_crit =
+    30
 
 
 pi : Float

@@ -115,20 +115,26 @@ type alias Ancien =
 boucleT : Config -> List Ancien
 boucleT sv =
     let
+        zT0 =
+            calcul_zT0 sv
+
+        zphig0 =
+            calcul_zphig0 sv
+
         ancien =
-            { alteration_max = alteration_max sv
-            , b_ocean = b_ocean sv
-            , fin = fin0 sv
+            { alteration_max = calcul_alteration_max sv
+            , b_ocean = calcul_b_ocean sv
+            , fin = calcul_fin0 sv
             , insol65N = insol65N sv
-            , phieq = calcul_phieq sv (zT0 sv)
-            , tau_niveau_calottes = tau_niveau_calottes sv 0
+            , phieq = calcul_phieq sv zT0
+            , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
             , zB_ocean = 0
             , zC_alteration = 0
-            , zT = zT0 sv
-            , zT_ancien = zT0 sv
+            , zT = zT0
+            , zT_ancien = zT0
             , zalbedo = 0
-            , zphig = zphig0 sv
-            , zphig_ancien = zphig0 sv
+            , zphig = zphig0
+            , zphig_ancien = zphig0
             , zpuit_bio = zpuit_bio sv
             , zpuit_oce = 0
             }
@@ -157,7 +163,7 @@ ev =
     EV.fromEcheance 10000
 
 
-zT0 sv =
+calcul_zT0 sv =
     (+) PhysicsConstants.tKelvin <|
         case truncate sv.annee_debut of
             1750 ->
@@ -167,7 +173,7 @@ zT0 sv =
                 PhysicsConstants.temperature_actuelle
 
 
-zphig0 sv =
+calcul_zphig0 sv =
     case truncate sv.annee_debut of
         1750 ->
             PhysicsConstants.niveau_calottes_1750
@@ -202,34 +208,37 @@ calculsBoucleIter sv t iter ancien =
         zT =
             ancien.zT
 
+        tau_niveau_calottes =
+            calcul_tau_niveau_calottes sv t
+
+        zphig =
+            calcul_zphig sv ancien tau_niveau_calottes
+
         zalbedo =
-            calcul_albedo sv (zphig sv t ancien)
+            calcul_albedo sv zphig
     in
-    { alteration_max = alteration_max sv
-    , b_ocean = b_ocean sv
-    , fin = calcul_fin sv zalbedo
-    , insol65N = insol65N sv
-    , phieq = calcul_phieq sv zT
-    , tau_niveau_calottes = tau_niveau_calottes sv t
-    , zB_ocean = zB_ocean sv ancien
-    , zC_alteration = zC_alteration sv ancien
-    , zT = zT
-    , zT_ancien = ancien.zT
-    , zalbedo = zalbedo
-    , zphig = zphig sv t ancien
-    , zphig_ancien = ancien.zphig
-    , zpuit_bio = zpuit_bio sv
-    , zpuit_oce = calcul_zpuit_oce sv zT
+    { ancien
+        | fin = calcul_fin sv zalbedo
+        , phieq = calcul_phieq sv zT
+        , tau_niveau_calottes = tau_niveau_calottes
+        , zB_ocean = calcul_zB_ocean ancien
+        , zC_alteration = calcul_zC_alteration ancien.alteration_max ancien.zphig
+        , zT = zT
+        , zT_ancien = ancien.zT
+        , zalbedo = zalbedo
+        , zphig = zphig
+        , zphig_ancien = ancien.zphig
+        , zpuit_oce = calcul_zpuit_oce sv zT
     }
 
 
 calcul_fin : Config -> Float -> Float
 calcul_fin sv zalbedo =
-    fin0 sv * (1 - zalbedo)
+    calcul_fin0 sv * (1 - zalbedo)
 
 
 calcul_albedo : Config -> Float -> Float
-calcul_albedo sv zphig_ =
+calcul_albedo sv zphig =
     -- if (this.simulationValues.fixed_albedo) {
     --     zalbedo = this.simulationValues.albedo_value / 100.; // conversion albedo en % en albedo en unité
     --     for (var t = 0; t <= this.experienceValues.indice_max(); t++) {
@@ -246,22 +255,17 @@ calcul_albedo sv zphig_ =
     if sv.fixed_albedo then
         sv.albedo_value / 100
 
-    else if zphig_ > PhysicsConstants.phig_crit then
+    else if zphig > PhysicsConstants.phig_crit then
         ModelPhysicsConstants.albedo_crit
-            + (zphig_ - PhysicsConstants.phig_crit)
+            + (zphig - PhysicsConstants.phig_crit)
             / (PhysicsConstants.niveau_calottes_max - PhysicsConstants.phig_crit)
             * (PhysicsConstants.albedo_ter - ModelPhysicsConstants.albedo_crit)
 
     else
         PhysicsConstants.albedo_glace_const
-            + (zphig_ - PhysicsConstants.niveau_calottes_min)
+            + (zphig - PhysicsConstants.niveau_calottes_min)
             / (PhysicsConstants.phig_crit - PhysicsConstants.niveau_calottes_min)
             * (ModelPhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
-
-
-zC_alteration : Config -> Ancien -> Float
-zC_alteration sv ancien =
-    calcul_zC_alteration (alteration_max sv) ancien.zphig
 
 
 zpuit_bio : Config -> Float
@@ -292,28 +296,26 @@ calcul_zpuit_oce sv zT =
             |> min (PhysicsConstants.puit_oce_max / 100)
 
 
-zB_ocean : Config -> Ancien -> Float
-zB_ocean sv ancien =
-    calcul_zC_alteration
-        (b_ocean sv)
-        ancien.zphig
+calcul_zB_ocean : Ancien -> Float
+calcul_zB_ocean ancien =
+    calcul_zC_alteration ancien.b_ocean ancien.zphig
 
 
 calcul_zC_alteration : Float -> Float -> Float
-calcul_zC_alteration cmax zphig_ =
-    if zphig_ > PhysicsConstants.niveau_calotte_critique_coo then
+calcul_zC_alteration cmax zphig =
+    if zphig > PhysicsConstants.niveau_calotte_critique_coo then
         cmax
 
-    else if zphig_ > 1.0e-2 then
-        cmax * zphig_ / PhysicsConstants.niveau_calotte_critique_coo
+    else if zphig > 1.0e-2 then
+        cmax * zphig / PhysicsConstants.niveau_calotte_critique_coo
 
     else
         0.0
 
 
-zphig : Config -> Int -> Ancien -> Float
-zphig sv t ancien =
-    calculT (calcul_phieq sv ancien.zT) ancien.zphig (tau_niveau_calottes sv t) dt
+calcul_zphig : Config -> Ancien -> Float -> Float
+calcul_zphig sv ancien tau_niveau_calottes =
+    calculT (calcul_phieq sv ancien.zT) ancien.zphig tau_niveau_calottes dt
         |> max 0
         |> min 90
 
@@ -323,8 +325,8 @@ calculT tEq tPrec tau dt_ =
     tPrec + (tEq - tPrec) * (1 - exp (-dt_ / tau))
 
 
-tau_niveau_calottes : Config -> Int -> Float
-tau_niveau_calottes sv t =
+calcul_tau_niveau_calottes : Config -> Int -> Float
+calcul_tau_niveau_calottes sv t =
     -- let
     --     -- FIXME
     --     zphig_ancien =
@@ -350,13 +352,13 @@ calcul_phieq sv zT =
         |> max PhysicsConstants.niveau_calottes_min
 
 
-alteration_max : Config -> Float
-alteration_max sv =
+calcul_alteration_max : Config -> Float
+calcul_alteration_max sv =
     ModelPhysicsConstants.c_alteration_naturel * (sv.alteration_value / 100.0)
 
 
-b_ocean : Config -> Float
-b_ocean sv =
+calcul_b_ocean : Config -> Float
+calcul_b_ocean sv =
     if sv.debranche_ocean then
         0
 
@@ -371,7 +373,7 @@ b_ocean sv =
 -}
 insol65N : Config -> Float
 insol65N sv =
-    fin0 sv
+    calcul_fin0 sv
         * cos (delta_angle sv)
         * exp
             (2
@@ -400,8 +402,8 @@ delta_angle sv =
         )
 
 
-fin0 : Config -> Float
-fin0 sv =
+calcul_fin0 : Config -> Float
+calcul_fin0 sv =
     -- Fin0 = CPhysicsConstants.puissance_recue_zero * (this.simulationValues.puissance_soleil_value / 100.) / (this.simulationValues.distance_ts_value / 100) / (this.simulationValues.distance_ts_value / 100);
     PhysicsConstants.puissance_recue_zero
         * (sv.puissance_soleil_value / 100.0)

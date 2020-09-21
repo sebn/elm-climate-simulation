@@ -99,6 +99,7 @@ type alias Ancien =
     , insol65N : Float
     , phieq : Float
     , tau_niveau_calottes : Float
+    , zB_ocean : Float
     , zT : Float
     , zT_ancien : Float
     , zphig : Float
@@ -115,6 +116,7 @@ boucleT sv =
             , insol65N = insol65N sv
             , phieq = calcul_phieq sv (zT0 sv)
             , tau_niveau_calottes = tau_niveau_calottes sv 0
+            , zB_ocean = 0
             , zT = zT0 sv
             , zT_ancien = zT0 sv
             , zphig = zphig0 sv
@@ -183,11 +185,31 @@ calculsBoucleIter sv t iter ancien =
     , insol65N = insol65N sv
     , phieq = calcul_phieq sv zT
     , tau_niveau_calottes = tau_niveau_calottes sv t
+    , zB_ocean = zB_ocean sv ancien
     , zT = zT
     , zT_ancien = ancien.zT
     , zphig = zphig sv t ancien
     , zphig_ancien = ancien.zphig
     }
+
+
+zB_ocean : Config -> Ancien -> Float
+zB_ocean sv ancien =
+    calcul_zC_alteration
+        (b_ocean sv)
+        ancien.zphig
+
+
+calcul_zC_alteration : Float -> Float -> Float
+calcul_zC_alteration cmax zphig_ =
+    if zphig_ > PhysicsConstants.niveau_calotte_critique_coo then
+        cmax
+
+    else if zphig_ > 1.0e-2 then
+        cmax * zphig_ / PhysicsConstants.niveau_calotte_critique_coo
+
+    else
+        0.0
 
 
 zphig : Config -> Int -> Ancien -> Float

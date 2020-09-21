@@ -5,6 +5,7 @@ module PhysicsConstants exposing
     , deltaT_last_century
     , excentricite_actuel
     , lat_Mil
+    , niveau_calotte_critique_coo
     , niveau_calottes_1750
     , niveau_calottes_LGM_noinsol
     , niveau_calottes_max
@@ -46,6 +47,11 @@ excentricite_actuel =
 lat_Mil : Int
 lat_Mil =
     65
+
+
+niveau_calotte_critique_coo : Float
+niveau_calotte_critique_coo =
+    20
 
 
 niveau_calottes_1750 : Float

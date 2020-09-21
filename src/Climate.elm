@@ -104,6 +104,7 @@ type alias Ancien =
     , zT_ancien : Float
     , zphig : Float
     , zphig_ancien : Float
+    , zpuit_oce : Float
     }
 
 
@@ -121,6 +122,7 @@ boucleT sv =
             , zT_ancien = zT0 sv
             , zphig = zphig0 sv
             , zphig_ancien = zphig0 sv
+            , zpuit_oce = 0
             }
     in
     List.range 1 n
@@ -166,6 +168,18 @@ zphig0 sv =
             ModelPhysicsConstants.niveau_calottes_actuel
 
 
+zpuit_oce0 sv =
+    if sv.fixed_concentration then
+        -- undefined in SimClimat
+        0
+
+    else if sv.debranche_ocean then
+        0
+
+    else
+        sv.puit_oce_value / 100
+
+
 boucleIter : Config -> Int -> Ancien -> Ancien
 boucleIter sv t ancien =
     List.range 1 niter
@@ -190,7 +204,23 @@ calculsBoucleIter sv t iter ancien =
     , zT_ancien = ancien.zT
     , zphig = zphig sv t ancien
     , zphig_ancien = ancien.zphig
+    , zpuit_oce = calcul_zpuit_oce sv zT
     }
+
+
+calcul_zpuit_oce : Config -> Float -> Float
+calcul_zpuit_oce sv zT =
+    if sv.debranche_ocean || sv.fixed_ocean then
+        0
+
+    else
+        ((zT - PhysicsConstants.tcrit_oce - PhysicsConstants.tKelvin)
+            / (PhysicsConstants.temperature_actuelle - PhysicsConstants.tcrit_oce)
+            * PhysicsConstants.puit_ocean_act
+            / 100
+        )
+            |> max 0
+            |> min (PhysicsConstants.puit_oce_max / 100)
 
 
 zB_ocean : Config -> Ancien -> Float

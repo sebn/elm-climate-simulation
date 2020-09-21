@@ -14,9 +14,12 @@ module PhysicsConstants exposing
     , pi
     , precession_actuel
     , puissance_recue_zero
+    , puit_oce_max
+    , puit_ocean_act
     , tKelvin
     , tau_niveau_calottes_deglacement
     , tau_niveau_calottes_englacement
+    , tcrit_oce
     , temperature_1750
     , temperature_LGM
     , temperature_actuelle
@@ -96,6 +99,11 @@ puissance_recue_zero =
     1370.0 / 4.0
 
 
+tcrit_oce : Float
+tcrit_oce =
+    35
+
+
 temperature_1750 : Float
 temperature_1750 =
     14.4
@@ -114,6 +122,20 @@ temperature_actuelle =
 deltaT_last_century : Float
 deltaT_last_century =
     0.8
+
+
+{-| en pourcent
+-}
+puit_oce_max : Float
+puit_oce_max =
+    40
+
+
+{-| en pourcent des emissions anthro absorbées
+-}
+puit_ocean_act : Float
+puit_ocean_act =
+    20
 
 
 tKelvin : Float

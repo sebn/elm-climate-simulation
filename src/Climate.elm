@@ -100,6 +100,7 @@ type alias Ancien =
     , phieq : Float
     , tau_niveau_calottes : Float
     , zB_ocean : Float
+    , zC_alteration : Float
     , zT : Float
     , zT_ancien : Float
     , zphig : Float
@@ -119,6 +120,7 @@ boucleT sv =
             , phieq = calcul_phieq sv (zT0 sv)
             , tau_niveau_calottes = tau_niveau_calottes sv 0
             , zB_ocean = 0
+            , zC_alteration = 0
             , zT = zT0 sv
             , zT_ancien = zT0 sv
             , zphig = zphig0 sv
@@ -202,6 +204,7 @@ calculsBoucleIter sv t iter ancien =
     , phieq = calcul_phieq sv zT
     , tau_niveau_calottes = tau_niveau_calottes sv t
     , zB_ocean = zB_ocean sv ancien
+    , zC_alteration = zC_alteration sv ancien
     , zT = zT
     , zT_ancien = ancien.zT
     , zphig = zphig sv t ancien
@@ -209,6 +212,11 @@ calculsBoucleIter sv t iter ancien =
     , zpuit_bio = zpuit_bio sv
     , zpuit_oce = calcul_zpuit_oce sv zT
     }
+
+
+zC_alteration : Config -> Ancien -> Float
+zC_alteration sv ancien =
+    calcul_zC_alteration (alteration_max sv) ancien.zphig
 
 
 zpuit_bio : Config -> Float

@@ -5,6 +5,8 @@ module PhysicsConstants exposing
     , b_ocean
     , c_calottes
     , concentration_coo_1750
+    , concentration_coo_glaciaire
+    , dFdegaz
     , deltaT_last_century
     , excentricite_actuel
     , lat_Mil
@@ -141,6 +143,18 @@ temperature_LGM =
 temperature_actuelle : Float
 temperature_actuelle =
     15.3
+
+
+{-| ppm
+-}
+concentration_coo_glaciaire : Float
+concentration_coo_glaciaire =
+    180
+
+
+dFdegaz : Float
+dFdegaz =
+    0.05
 
 
 deltaT_last_century : Float

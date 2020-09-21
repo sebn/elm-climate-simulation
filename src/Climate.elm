@@ -5,6 +5,7 @@ module Climate exposing
     )
 
 import ExperienceValues as EV exposing (ExperienceValues)
+import List.Nonempty as NEList
 import ModelPhysicsConstants
 import PhysicsConstants
 
@@ -59,14 +60,14 @@ type alias Simulation =
     , stockage_biologique_value : Float
 
     -- RESULTS
-    , temperature_data : DataArray Float
+    , temperature_data : DataArray Ancien
     }
 
 
 type alias DataArray a =
     { -- N : Int
       datas : List a
-    , past_datas : List a
+    , past_datas : List Float
     , resolution : Int
     , indice_min : Int
     , indice_max : Int
@@ -80,10 +81,10 @@ n =
     100
 
 
-temperature_data_array : Config -> DataArray Float
-temperature_data_array config =
-    { datas = temperature_data config
-    , past_datas = temperature_past_data config.annee_debut
+temperature_data_array : Config -> DataArray Ancien
+temperature_data_array sv =
+    { datas = boucleT sv
+    , past_datas = temperature_past_data sv.annee_debut
     , resolution = 100
     , indice_min = 0
     , indice_max = 100
@@ -92,40 +93,130 @@ temperature_data_array config =
     }
 
 
-temperature_data : Config -> List Float
-temperature_data config =
+type alias Ancien =
+    { alteration_max : Float
+    , b_ocean : Float
+    , insol65N : Float
+    , phieq : Float
+    , tau_niveau_calottes : Float
+    , zT : Float
+    , zT_ancien : Float
+    , zphig : Float
+    , zphig_ancien : Float
+    }
+
+
+boucleT : Config -> List Ancien
+boucleT sv =
     let
-        ev =
-            EV.fromEcheance 10000
+        ancien =
+            { alteration_max = alteration_max sv
+            , b_ocean = b_ocean sv
+            , insol65N = insol65N sv
+            , phieq = calcul_phieq sv (zT0 sv)
+            , tau_niveau_calottes = tau_niveau_calottes sv 0
+            , zT = zT0 sv
+            , zT_ancien = zT0 sv
+            , zphig = zphig0 sv
+            , zphig_ancien = zphig0 sv
+            }
     in
-    zT_ancien config
-        :: (List.range 1 n
-                -- 14.399999999999977
-                |> List.map (tau_niveau_calottes config)
-           )
+    List.range 1 n
+        |> List.foldl
+            (calculsBoucleT sv)
+            (NEList.fromElement ancien)
+        |> NEList.reverse
+        |> NEList.tail
+        |> (::) ancien
+
+
+calculsBoucleT : Config -> (Int -> NEList.Nonempty Ancien -> NEList.Nonempty Ancien)
+calculsBoucleT sv t anciens =
+    let
+        ancien =
+            NEList.head anciens
+    in
+    NEList.cons
+        (boucleIter sv t ancien)
+        anciens
+
+
+ev =
+    EV.fromEcheance 10000
+
+
+zT0 sv =
+    (+) PhysicsConstants.tKelvin <|
+        case truncate sv.annee_debut of
+            1750 ->
+                PhysicsConstants.temperature_1750
+
+            _ ->
+                PhysicsConstants.temperature_actuelle
+
+
+zphig0 sv =
+    case truncate sv.annee_debut of
+        1750 ->
+            PhysicsConstants.niveau_calottes_1750
+
+        _ ->
+            ModelPhysicsConstants.niveau_calottes_actuel
+
+
+boucleIter : Config -> Int -> Ancien -> Ancien
+boucleIter sv t ancien =
+    List.range 1 niter
+        |> List.foldl
+            (calculsBoucleIter sv t)
+            ancien
+
+
+calculsBoucleIter : Config -> Int -> (Int -> Ancien -> Ancien)
+calculsBoucleIter sv t iter ancien =
+    let
+        zT =
+            ancien.zT
+    in
+    { alteration_max = alteration_max sv
+    , b_ocean = b_ocean sv
+    , insol65N = insol65N sv
+    , phieq = calcul_phieq sv zT
+    , tau_niveau_calottes = tau_niveau_calottes sv t
+    , zT = zT
+    , zT_ancien = ancien.zT
+    , zphig = zphig sv t ancien
+    , zphig_ancien = ancien.zphig
+    }
+
+
+zphig : Config -> Int -> Ancien -> Float
+zphig sv t ancien =
+    calculT (calcul_phieq sv ancien.zT) ancien.zphig (tau_niveau_calottes sv t) dt
+        |> max 0
+        |> min 90
+
+
+calculT : Float -> Float -> Float -> Float -> Float
+calculT tEq tPrec tau dt_ =
+    tPrec + (tEq - tPrec) * (1 - exp (-dt_ / tau))
 
 
 tau_niveau_calottes : Config -> Int -> Float
 tau_niveau_calottes sv t =
-    let
-        -- FIXME
-        zphig_ancien =
-            50.0
-    in
-    if zphig_ancien < phieq sv t then
-        PhysicsConstants.tau_niveau_calottes_deglacement
+    -- let
+    --     -- FIXME
+    --     zphig_ancien =
+    --         50.0
+    -- in
+    -- if zphig_ancien < phieq sv t then
+    --     PhysicsConstants.tau_niveau_calottes_deglacement
+    -- else
+    PhysicsConstants.tau_niveau_calottes_englacement
 
-    else
-        PhysicsConstants.tau_niveau_calottes_englacement
 
-
-phieq : Config -> Int -> Float
-phieq sv t =
-    let
-        -- FIXME
-        zT =
-            toFloat t + PhysicsConstants.tKelvin
-    in
+calcul_phieq : Config -> Float -> Float
+calcul_phieq sv zT =
     (ModelPhysicsConstants.a_calottes
         * (zT - PhysicsConstants.tKelvin)
         + ModelPhysicsConstants.b_calottes
@@ -136,17 +227,6 @@ phieq sv t =
     )
         |> min PhysicsConstants.niveau_calottes_max
         |> max PhysicsConstants.niveau_calottes_min
-
-
-zT_ancien : Config -> Float
-zT_ancien sv =
-    (+) PhysicsConstants.tKelvin <|
-        case truncate sv.annee_debut of
-            1750 ->
-                PhysicsConstants.temperature_1750
-
-            _ ->
-                PhysicsConstants.temperature_actuelle
 
 
 alteration_max : Config -> Float
@@ -208,13 +288,13 @@ fin0 sv =
         / (sv.distance_ts_value / 100)
 
 
-dt : ExperienceValues -> Float
-dt ev =
-    EV.temps_elem ev / toFloat (niter ev)
+dt : Float
+dt =
+    EV.temps_elem ev / toFloat niter
 
 
-niter : ExperienceValues -> Int
-niter ev =
+niter : Int
+niter =
     max 4 (truncate (3 * exp (0.3 * log (EV.temps_elem ev))))
 
 

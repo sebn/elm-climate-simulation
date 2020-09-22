@@ -98,6 +98,7 @@ type alias Ancien =
     , b_ocean : Float
     , fdegaz : Float
     , fin : Float
+    , forcage_serre_eau : Float
     , insol65N : Float
     , phieq : Float
     , tau_niveau_calottes : Float
@@ -113,6 +114,7 @@ type alias Ancien =
     , zphig_ancien : Float
     , zpuit_bio : Float
     , zpuit_oce : Float
+    , zrapport_H2O : Float
     , zsomme_C : Float
     , zsomme_flux_const : Float
     }
@@ -132,6 +134,7 @@ boucleT sv =
             , b_ocean = calcul_b_ocean sv
             , fdegaz = 0
             , fin = calcul_fin0 sv
+            , forcage_serre_eau = 0
             , insol65N = insol65N sv
             , phieq = calcul_phieq sv zT0
             , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
@@ -147,6 +150,7 @@ boucleT sv =
             , zphig_ancien = zphig0
             , zpuit_bio = calcul_zpuit_bio sv
             , zpuit_oce = 0
+            , zrapport_H2O = calcul_rapport_H2O sv zT0
             , zsomme_C = 0
             , zsomme_flux_const = 0
             }
@@ -255,10 +259,17 @@ calculsBoucleIter sv t iter ancien =
 
         zCO2 =
             calcul_zCO2 ancien emission_coo_ppm dt
+
+        zrapport_H2O =
+            calcul_rapport_H2O sv ancien.zT
+
+        forcage_serre_eau =
+            calcul_forcage_serre_H2O zrapport_H2O
     in
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
         , fin = calcul_fin sv zalbedo
+        , forcage_serre_eau = forcage_serre_eau
         , phieq = calcul_phieq sv zT
         , tau_niveau_calottes = tau_niveau_calottes
         , zB_ocean = zB_ocean
@@ -272,9 +283,48 @@ calculsBoucleIter sv t iter ancien =
         , zphig = zphig
         , zphig_ancien = ancien.zphig
         , zpuit_oce = zpuit_oce
+        , zrapport_H2O = zrapport_H2O
         , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+calcul_forcage_serre_H2O : Float -> Float
+calcul_forcage_serre_H2O zrapport_H2O =
+    if zrapport_H2O > 1.0e-5 then
+        ModelPhysicsConstants.a_H2O
+            * (1
+                - exp (PhysicsConstants.pow_H2O * log zrapport_H2O)
+              )
+            * (0.3
+                * exp
+                    (-(sqrt (abs (zrapport_H2O - 1)))
+                        / 10.0
+                    )
+                + 0.7
+              )
+
+    else
+        ModelPhysicsConstants.a_H2O
+
+
+calcul_rapport_H2O : Config -> Float -> Float
+calcul_rapport_H2O sv zT =
+    if sv.fixed_eau then
+        sv.rapport_H2O_value / 100
+
+    else
+        -- utilisation de la formule de Rankine donnant Psat
+        exp
+            (PhysicsConstants.a_rankine
+                - PhysicsConstants.b_rankine
+                / zT
+            )
+            / exp
+                (PhysicsConstants.a_rankine
+                    - PhysicsConstants.b_rankine
+                    / (PhysicsConstants.temperature_1750 + PhysicsConstants.tKelvin)
+                )
 
 
 calcul_zCO2 : Ancien -> Float -> Float -> Float

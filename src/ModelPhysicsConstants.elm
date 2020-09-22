@@ -1,5 +1,6 @@
 module ModelPhysicsConstants exposing
-    ( a_calottes
+    ( a_H2O
+    , a_calottes
     , albedo_crit
     , b_calottes
     , c_alteration_naturel
@@ -11,6 +12,19 @@ module ModelPhysicsConstants exposing
 -}
 
 import PhysicsConstants
+
+
+a_H2O : Float
+a_H2O =
+    -PhysicsConstants.q_H2O * (1 - g0)
+
+
+g0 : Float
+g0 =
+    PhysicsConstants.puissance_recue_zero
+        * (1 - PhysicsConstants.albedo_1750)
+        / PhysicsConstants.sigma
+        / exp (4 * log (PhysicsConstants.tKelvin + PhysicsConstants.temperature_1750))
 
 
 {-| On suppose qu'une partie de la variation du niveau de calotte est lié à
@@ -81,3 +95,8 @@ niveau_calottes_actuel =
 exp : Float -> Float
 exp =
     (^) e
+
+
+log : Float -> Float
+log =
+    logBase e

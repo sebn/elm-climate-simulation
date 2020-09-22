@@ -12,6 +12,9 @@ assert.options.strict = true
 
 var elmTestWrapper = Elm.TestWrapper.init();
 
+// FIXME: Force same precision in SimClimat as in Elm
+Math.exp = x => Math.pow(Math.E, x);
+
 test('starting from pre-industrial state', async () => {
     const sv = new CSimulationValues();
     sv.create_1750_state();
@@ -94,6 +97,7 @@ var normalizeSimulationValues = sv => {
         if (sv['temperature_data']['datas'][0]) {
             delete sv['temperature_data']['datas'][0]['alteration_max'];
             delete sv['temperature_data']['datas'][0]['fin'];
+            delete sv['temperature_data']['datas'][0]['forcage_serre_eau'];
             delete sv['temperature_data']['datas'][0]['phieq'];
             delete sv['temperature_data']['datas'][0]['tau_niveau_calottes'];
             delete sv['temperature_data']['datas'][0]['zB_ocean'];
@@ -104,6 +108,7 @@ var normalizeSimulationValues = sv => {
             delete sv['temperature_data']['datas'][0]['zphig'];
             delete sv['temperature_data']['datas'][0]['zphig_ancien'];
             delete sv['temperature_data']['datas'][0]['zpuit_oce'];
+            delete sv['temperature_data']['datas'][0]['zrapport_H2O'];
             delete sv['temperature_data']['datas'][0]['zsomme_C'];
             delete sv['temperature_data']['datas'][0]['fdegaz'];
             delete sv['temperature_data']['datas'][0]['zCO2'];

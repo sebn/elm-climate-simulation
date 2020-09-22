@@ -1,8 +1,10 @@
 module PhysicsConstants exposing
-    ( albedo_1750
+    ( a_rankine
+    , albedo_1750
     , albedo_glace_const
     , albedo_ter
     , b_ocean
+    , b_rankine
     , c_calottes
     , concentration_coo_1750
     , concentration_coo_actuel
@@ -20,10 +22,13 @@ module PhysicsConstants exposing
     , obliquite_actuel
     , phig_crit
     , pi
+    , pow_H2O
     , precession_actuel
     , puissance_recue_zero
     , puit_oce_max
     , puit_ocean_act
+    , q_H2O
+    , sigma
     , tKelvin
     , tau_niveau_calottes_deglacement
     , tau_niveau_calottes_englacement
@@ -33,6 +38,11 @@ module PhysicsConstants exposing
     , temperature_actuelle
     , volcanisme_actuel
     )
+
+
+a_rankine : Float
+a_rankine =
+    13.7
 
 
 albedo_1750 : Float
@@ -53,6 +63,11 @@ albedo_ter =
 b_ocean : Float
 b_ocean =
     1 / 5000.0
+
+
+b_rankine : Float
+b_rankine =
+    5120
 
 
 c_calottes : Float
@@ -115,6 +130,13 @@ pi =
     Basics.pi
 
 
+{-| normallement: 0.18
+-}
+pow_H2O : Float
+pow_H2O =
+    0.23
+
+
 precession_actuel : Float
 precession_actuel =
     -- on prend la même precession que LMDZ
@@ -124,7 +146,7 @@ precession_actuel =
 
 puissance_recue_zero : Float
 puissance_recue_zero =
-    1370.0 / 4.0
+    1370 / 4
 
 
 tcrit_oce : Float
@@ -190,6 +212,18 @@ puit_oce_max =
 puit_ocean_act : Float
 puit_ocean_act =
     20
+
+
+{-| eau=60% de l'effet de serre
+-}
+q_H2O : Float
+q_H2O =
+    0.6
+
+
+sigma : Float
+sigma =
+    5.67e-8
 
 
 tKelvin : Float

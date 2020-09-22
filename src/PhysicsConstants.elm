@@ -5,7 +5,9 @@ module PhysicsConstants exposing
     , b_ocean
     , c_calottes
     , concentration_coo_1750
+    , concentration_coo_actuel
     , concentration_coo_glaciaire
+    , coo_Gt_act
     , dFdegaz
     , deltaT_last_century
     , excentricite_actuel
@@ -147,9 +149,23 @@ temperature_actuelle =
 
 {-| ppm
 -}
+concentration_coo_actuel : Float
+concentration_coo_actuel =
+    405
+
+
+{-| ppm
+-}
 concentration_coo_glaciaire : Float
 concentration_coo_glaciaire =
     180
+
+
+{-| masse de CO2 en Gt
+-}
+coo_Gt_act : Float
+coo_Gt_act =
+    750
 
 
 dFdegaz : Float

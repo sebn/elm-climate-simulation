@@ -104,6 +104,7 @@ type alias Ancien =
     , zB_ocean : Float
     , zC_alteration : Float
     , zC_stockage : Float
+    , zCO2 : Float
     , zCO2eq_oce : Float
     , zT : Float
     , zT_ancien : Float
@@ -137,6 +138,7 @@ boucleT sv =
             , zB_ocean = 0
             , zC_alteration = 0
             , zC_stockage = 0
+            , zCO2 = sv.coo_concentr_value
             , zCO2eq_oce = 0
             , zT = zT0
             , zT_ancien = zT0
@@ -241,6 +243,18 @@ calculsBoucleIter sv t iter ancien =
 
         zsomme_flux_const =
             calcul_zsomme_flux_const sv zpuit_oce ancien.zpuit_bio zB_ocean ancien.zT
+
+        zsomme_C =
+            calcul_zsomme_C zpuit_oce ancien.zpuit_bio zC_alteration zC_stockage zB_ocean
+
+        zsomme_flux =
+            zsomme_flux_const + ancien.zCO2 * zsomme_C
+
+        emission_coo_ppm =
+            calcul_emission_coo_ppm zsomme_flux
+
+        zCO2 =
+            calcul_zCO2 ancien emission_coo_ppm dt
     in
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
@@ -250,6 +264,7 @@ calculsBoucleIter sv t iter ancien =
         , zB_ocean = zB_ocean
         , zC_alteration = zC_alteration
         , zC_stockage = zC_stockage
+        , zCO2 = zCO2
         , zCO2eq_oce = calcul_zCO2eq_oce ancien.zT
         , zT = zT
         , zT_ancien = ancien.zT
@@ -257,9 +272,23 @@ calculsBoucleIter sv t iter ancien =
         , zphig = zphig
         , zphig_ancien = ancien.zphig
         , zpuit_oce = zpuit_oce
-        , zsomme_C = calcul_zsomme_C zpuit_oce ancien.zpuit_bio zC_alteration zC_stockage zB_ocean
+        , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+calcul_zCO2 : Ancien -> Float -> Float -> Float
+calcul_zCO2 ancien emission_coo_ppm dt_ =
+    max 0 <|
+        ancien.zCO2
+            + emission_coo_ppm
+            * dt_
+
+
+{-| ppm/an
+-}
+calcul_emission_coo_ppm zsomme_flux =
+    zsomme_flux * (PhysicsConstants.concentration_coo_actuel / PhysicsConstants.coo_Gt_act)
 
 
 calcul_zsomme_flux_const sv zpuit_oce zpuit_bio zB_ocean zT_ancien =

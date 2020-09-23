@@ -98,6 +98,7 @@ type alias Ancien =
     , b_ocean : Float
     , fdegaz : Float
     , fin : Float
+    , forcage_serre : Float
     , forcage_serre_CO2 : Float
     , forcage_serre_eau : Float
     , insol65N : Float
@@ -138,6 +139,7 @@ boucleT sv =
             , b_ocean = calcul_b_ocean sv
             , fdegaz = 0
             , fin = calcul_fin0 sv
+            , forcage_serre = 0
             , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
             , forcage_serre_eau = 0
             , insol65N = insol65N sv
@@ -270,11 +272,18 @@ calculsBoucleIter sv t iter ancien =
 
         forcage_serre_eau =
             calcul_forcage_serre_H2O zrapport_H2O
+
+        forcage_serre_CO2 =
+            calcul_forcage_serre_CO2 zCO2
+
+        forcage_serre =
+            forcage_serre_CO2 + forcage_serre_eau
     in
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
         , fin = calcul_fin sv zalbedo
-        , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
+        , forcage_serre = forcage_serre
+        , forcage_serre_CO2 = forcage_serre_CO2
         , forcage_serre_eau = forcage_serre_eau
         , phieq = calcul_phieq sv zT
         , tau_niveau_calottes = tau_niveau_calottes

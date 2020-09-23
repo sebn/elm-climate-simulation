@@ -16,6 +16,7 @@ module PhysicsConstants exposing
     , dFdegaz
     , deltaT_last_century
     , excentricite_actuel
+    , g_min
     , lat_Mil
     , niveau_calotte_critique_coo
     , niveau_calottes_1750
@@ -92,6 +93,13 @@ concentration_coo_1750 =
 excentricite_actuel : Float
 excentricite_actuel =
     0.0167
+
+
+{-| `forcage_serre` min, pour éviter des NaN
+-}
+g_min : Float
+g_min =
+    1.0e-4
 
 
 lat_Mil : Int

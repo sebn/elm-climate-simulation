@@ -112,6 +112,7 @@ type alias Ancien =
     , zCO2eq_oce : Float
     , zT : Float
     , zT_ancien : Float
+    , zTeq : Float
     , zalbedo : Float
     , zphig : Float
     , zphig_ancien : Float
@@ -154,6 +155,7 @@ boucleT sv =
             , zCO2eq_oce = 0
             , zT = zT0
             , zT_ancien = zT0
+            , zTeq = 0
             , zalbedo = 0
             , zphig = zphig0
             , zphig_ancien = zphig0
@@ -283,10 +285,16 @@ calculsBoucleIter sv t iter ancien =
 
         g =
             calcul_G forcage_serre
+
+        fin =
+            calcul_fin sv zalbedo
+
+        zTeq =
+            calcul_zTeq fin g
     in
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
-        , fin = calcul_fin sv zalbedo
+        , fin = fin
         , forcage_serre = forcage_serre
         , forcage_serre_CO2 = forcage_serre_CO2
         , forcage_serre_eau = forcage_serre_eau
@@ -300,6 +308,7 @@ calculsBoucleIter sv t iter ancien =
         , zCO2eq_oce = calcul_zCO2eq_oce ancien.zT
         , zT = zT
         , zT_ancien = ancien.zT
+        , zTeq = zTeq
         , zalbedo = zalbedo
         , zphig = zphig
         , zphig_ancien = ancien.zphig
@@ -308,6 +317,11 @@ calculsBoucleIter sv t iter ancien =
         , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+calcul_zTeq : Float -> Float -> Float
+calcul_zTeq fin g =
+    exp (0.25 * log (fin / (g * PhysicsConstants.sigma)))
 
 
 calcul_G : Float -> Float

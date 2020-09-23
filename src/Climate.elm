@@ -98,6 +98,7 @@ type alias Ancien =
     , b_ocean : Float
     , fdegaz : Float
     , fin : Float
+    , forcage_serre_CO2 : Float
     , forcage_serre_eau : Float
     , insol65N : Float
     , phieq : Float
@@ -129,11 +130,15 @@ boucleT sv =
         zphig0 =
             calcul_zphig0 sv
 
+        zCO2 =
+            sv.coo_concentr_value
+
         ancien =
             { alteration_max = calcul_alteration_max sv
             , b_ocean = calcul_b_ocean sv
             , fdegaz = 0
             , fin = calcul_fin0 sv
+            , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
             , forcage_serre_eau = 0
             , insol65N = insol65N sv
             , phieq = calcul_phieq sv zT0
@@ -141,7 +146,7 @@ boucleT sv =
             , zB_ocean = 0
             , zC_alteration = 0
             , zC_stockage = 0
-            , zCO2 = sv.coo_concentr_value
+            , zCO2 = zCO2
             , zCO2eq_oce = 0
             , zT = zT0
             , zT_ancien = zT0
@@ -269,6 +274,7 @@ calculsBoucleIter sv t iter ancien =
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
         , fin = calcul_fin sv zalbedo
+        , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
         , forcage_serre_eau = forcage_serre_eau
         , phieq = calcul_phieq sv zT
         , tau_niveau_calottes = tau_niveau_calottes
@@ -287,6 +293,37 @@ calculsBoucleIter sv t iter ancien =
         , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+calcul_forcage_serre_CO2 : Float -> Float
+calcul_forcage_serre_CO2 zCO2 =
+    if zCO2 < PhysicsConstants.concentration_coo_limite_bas then
+        -- relation linéaire, extrapolation basse
+        -PhysicsConstants.q_CO2
+            * ModelPhysicsConstants.g0
+            + zCO2
+            / PhysicsConstants.concentration_coo_limite_bas
+            * (PhysicsConstants.q_CO2
+                * ModelPhysicsConstants.g0
+                + PhysicsConstants.a_coo
+                * log (PhysicsConstants.concentration_coo_limite_bas / PhysicsConstants.concentration_coo_1750)
+              )
+
+    else if zCO2 > PhysicsConstants.concentration_coo_limite then
+        -- relation linéaire, extrapolation haute
+        PhysicsConstants.a_coo
+            * (log
+                (PhysicsConstants.concentration_coo_limite
+                    / PhysicsConstants.concentration_coo_1750
+                )
+                + 1
+                * (zCO2 / PhysicsConstants.concentration_coo_limite - 1)
+              )
+
+    else
+        -- relation log
+        PhysicsConstants.a_coo
+            * log (zCO2 / PhysicsConstants.concentration_coo_1750)
 
 
 calcul_forcage_serre_H2O : Float -> Float
@@ -357,7 +394,7 @@ calcul_zCO2eq_oce zT =
             15
 
         b =
-            (PhysicsConstants.concentration_coo_glaciaire - toFloat PhysicsConstants.concentration_coo_1750)
+            (PhysicsConstants.concentration_coo_glaciaire - PhysicsConstants.concentration_coo_1750)
                 / (atan (PhysicsConstants.temperature_LGM - c)
                     - atan (PhysicsConstants.temperature_1750 - c)
                   )

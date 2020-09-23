@@ -4,6 +4,7 @@ module ModelPhysicsConstants exposing
     , albedo_crit
     , b_calottes
     , c_alteration_naturel
+    , g0
     , insol_actuel
     , niveau_calottes_actuel
     )
@@ -60,7 +61,7 @@ b_calottes =
 c_alteration_naturel : Float
 c_alteration_naturel =
     -PhysicsConstants.volcanisme_actuel
-        / toFloat PhysicsConstants.concentration_coo_1750
+        / PhysicsConstants.concentration_coo_1750
 
 
 delta_angle_actuel : Float

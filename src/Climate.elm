@@ -101,6 +101,7 @@ type alias Ancien =
     , forcage_serre : Float
     , forcage_serre_CO2 : Float
     , forcage_serre_eau : Float
+    , g : Float
     , insol65N : Float
     , phieq : Float
     , tau_niveau_calottes : Float
@@ -142,6 +143,7 @@ boucleT sv =
             , forcage_serre = 0
             , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
             , forcage_serre_eau = 0
+            , g = 0
             , insol65N = insol65N sv
             , phieq = calcul_phieq sv zT0
             , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
@@ -278,6 +280,9 @@ calculsBoucleIter sv t iter ancien =
 
         forcage_serre =
             forcage_serre_CO2 + forcage_serre_eau
+
+        g =
+            calcul_G forcage_serre
     in
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
@@ -285,6 +290,7 @@ calculsBoucleIter sv t iter ancien =
         , forcage_serre = forcage_serre
         , forcage_serre_CO2 = forcage_serre_CO2
         , forcage_serre_eau = forcage_serre_eau
+        , g = g
         , phieq = calcul_phieq sv zT
         , tau_niveau_calottes = tau_niveau_calottes
         , zB_ocean = zB_ocean
@@ -302,6 +308,14 @@ calculsBoucleIter sv t iter ancien =
         , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+calcul_G : Float -> Float
+calcul_G forcage_serre =
+    ModelPhysicsConstants.g0
+        - forcage_serre
+        |> max PhysicsConstants.g_min
+        |> min 1
 
 
 calcul_forcage_serre_CO2 : Float -> Float

@@ -103,12 +103,14 @@ type alias Ancien =
     , forcage_serre_eau : Float
     , g : Float
     , insol65N : Float
+    , oscillation : Int
     , phieq : Float
     , tau_niveau_calottes : Float
     , zB_ocean : Float
     , zC_alteration : Float
     , zC_stockage : Float
     , zCO2 : Float
+    , zCO2_prec : Float
     , zCO2eq_oce : Float
     , zT : Float
     , zT_ancien : Float
@@ -146,12 +148,14 @@ boucleT sv =
             , forcage_serre_eau = 0
             , g = 0
             , insol65N = insol65N sv
+            , oscillation = 0
             , phieq = calcul_phieq sv zT0
             , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
             , zB_ocean = 0
             , zC_alteration = 0
             , zC_stockage = 0
             , zCO2 = zCO2
+            , zCO2_prec = zCO2
             , zCO2eq_oce = 0
             , zT = zT0
             , zT_ancien = zT0
@@ -226,7 +230,7 @@ boucleIter sv t ancien =
     List.range 1 niter
         |> List.foldl
             (calculsBoucleIter sv t)
-            ancien
+            { ancien | oscillation = 0 }
 
 
 calculsBoucleIter : Config -> Int -> (Int -> Ancien -> Ancien)
@@ -291,6 +295,9 @@ calculsBoucleIter sv t iter ancien =
 
         zT =
             calcul_zT zTeq ancien.zT dt
+
+        oscillation =
+            calcul_oscillation sv iter ancien zT zCO2
     in
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
@@ -304,19 +311,89 @@ calculsBoucleIter sv t iter ancien =
         , zB_ocean = zB_ocean
         , zC_alteration = zC_alteration
         , zC_stockage = zC_stockage
-        , zCO2 = zCO2
+        , zCO2 =
+            if oscillation == 1 && not sv.fixed_concentration then
+                (zCO2 + ancien.zCO2 + 0.5 * ancien.zCO2_prec) / 2.5
+
+            else
+                zCO2
+        , zCO2_prec = ancien.zCO2
         , zCO2eq_oce = calcul_zCO2eq_oce ancien.zT
-        , zT = zT
+        , zT =
+            if oscillation == 1 then
+                (zT + ancien.zT + 0.5 * ancien.zT_ancien) / 2.5
+
+            else
+                zT
         , zT_ancien = ancien.zT
         , zTeq = zTeq
         , zalbedo = zalbedo
-        , zphig = zphig
+        , zphig =
+            if oscillation == 1 then
+                (zphig + ancien.zphig + 0.5 * ancien.zphig_ancien) / 2.5
+
+            else
+                zphig
         , zphig_ancien = ancien.zphig
         , zpuit_oce = zpuit_oce
         , zrapport_H2O = zrapport_H2O
         , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+calcul_oscillation : Config -> Int -> Ancien -> Float -> Float -> Int
+calcul_oscillation sv iter ancien zT zCO2 =
+    let
+        oscillation =
+            if (iter >= 3) && (ancien.oscillation == 0) then
+                -- pour éviter de détecter des oscillations à cause d'erreurs numériques
+                -- on rajoute marge de 1e-5
+                if ancien.zT < ancien.zT_ancien - 1.0e-5 then
+                    if zT > ancien.zT + 1.0e-5 then
+                        1
+
+                    else
+                        ancien.oscillation
+
+                else if ancien.zT > ancien.zT_ancien + 1.0e-5 then
+                    if zT < ancien.zT - 1.0e-5 then
+                        1
+
+                    else
+                        ancien.oscillation
+
+                else
+                    ancien.oscillation
+
+            else
+                ancien.oscillation
+    in
+    if sv.fixed_concentration then
+        oscillation
+
+    else if (iter >= 3) && (oscillation == 0) then
+        -- pour éviter de détecter des oscillations à cause d'erreurs numériques
+        -- on rajoute marge de 1e-5
+        if ancien.zCO2 < ancien.zCO2_prec - 1.0e-5 then
+            if zCO2 > ancien.zCO2 + 1.0e-5 then
+                1
+
+            else
+                oscillation
+
+        else if ancien.zCO2 > ancien.zCO2_prec + 1.0e-5 then
+            if zCO2 < ancien.zCO2 - 1.0e-5 then
+                1
+
+            else
+                oscillation
+
+        else
+            oscillation
+
+    else
+        oscillation
 
 
 calcul_zT : Float -> Float -> Float -> Float

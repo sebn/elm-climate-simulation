@@ -101,6 +101,7 @@ var normalizeSimulationValues = sv => {
             delete sv['temperature_data']['datas'][0]['forcage_serre_CO2'];
             delete sv['temperature_data']['datas'][0]['forcage_serre_eau'];
             delete sv['temperature_data']['datas'][0]['g'];
+            delete sv['temperature_data']['datas'][0]['oscillation'];
             delete sv['temperature_data']['datas'][0]['phieq'];
             delete sv['temperature_data']['datas'][0]['tau_niveau_calottes'];
             delete sv['temperature_data']['datas'][0]['zB_ocean'];
@@ -116,6 +117,7 @@ var normalizeSimulationValues = sv => {
             delete sv['temperature_data']['datas'][0]['zsomme_C'];
             delete sv['temperature_data']['datas'][0]['fdegaz'];
             delete sv['temperature_data']['datas'][0]['zCO2'];
+            delete sv['temperature_data']['datas'][0]['zCO2_prec'];
             delete sv['temperature_data']['datas'][0]['zCO2eq_oce'];
             delete sv['temperature_data']['datas'][0]['zsomme_flux_const'];
         }

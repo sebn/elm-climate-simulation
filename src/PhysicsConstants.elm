@@ -1,5 +1,6 @@
 module PhysicsConstants exposing
-    ( a_rankine
+    ( a_coo
+    , a_rankine
     , albedo_1750
     , albedo_glace_const
     , albedo_ter
@@ -9,6 +10,8 @@ module PhysicsConstants exposing
     , concentration_coo_1750
     , concentration_coo_actuel
     , concentration_coo_glaciaire
+    , concentration_coo_limite
+    , concentration_coo_limite_bas
     , coo_Gt_act
     , dFdegaz
     , deltaT_last_century
@@ -27,6 +30,7 @@ module PhysicsConstants exposing
     , puissance_recue_zero
     , puit_oce_max
     , puit_ocean_act
+    , q_CO2
     , q_H2O
     , sigma
     , tKelvin
@@ -38,6 +42,11 @@ module PhysicsConstants exposing
     , temperature_actuelle
     , volcanisme_actuel
     )
+
+
+a_coo : Float
+a_coo =
+    1.8e-2
 
 
 a_rankine : Float
@@ -75,7 +84,7 @@ c_calottes =
     0.2
 
 
-concentration_coo_1750 : Int
+concentration_coo_1750 : Float
 concentration_coo_1750 =
     280
 
@@ -183,6 +192,20 @@ concentration_coo_glaciaire =
     180
 
 
+{-| en ppm, la limite entre relation linéaire et log pour forçage serre
+-}
+concentration_coo_limite : Float
+concentration_coo_limite =
+    10000
+
+
+{-| en ppm, idem pour extrapolation pour basses concentrations
+-}
+concentration_coo_limite_bas : Float
+concentration_coo_limite_bas =
+    100
+
+
 {-| masse de CO2 en Gt
 -}
 coo_Gt_act : Float
@@ -214,7 +237,14 @@ puit_ocean_act =
     20
 
 
-{-| eau=60% de l'effet de serre
+{-| CO2 = 26% de l'effet de serre
+-}
+q_CO2 : Float
+q_CO2 =
+    0.26
+
+
+{-| eau = 60% de l'effet de serre
 -}
 q_H2O : Float
 q_H2O =

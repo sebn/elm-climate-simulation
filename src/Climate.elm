@@ -232,9 +232,6 @@ boucleIter sv t ancien =
 calculsBoucleIter : Config -> Int -> (Int -> Ancien -> Ancien)
 calculsBoucleIter sv t iter ancien =
     let
-        zT =
-            ancien.zT
-
         tau_niveau_calottes =
             calcul_tau_niveau_calottes sv t
 
@@ -248,7 +245,7 @@ calculsBoucleIter sv t iter ancien =
             calcul_zC_alteration ancien.alteration_max ancien.zphig
 
         zpuit_oce =
-            calcul_zpuit_oce sv zT
+            calcul_zpuit_oce sv ancien.zT
 
         zC_stockage =
             calcul_zC_stockage sv ancien.zphig
@@ -291,6 +288,9 @@ calculsBoucleIter sv t iter ancien =
 
         zTeq =
             calcul_zTeq fin g
+
+        zT =
+            calcul_zT zTeq ancien.zT dt
     in
     { ancien
         | fdegaz = calcul_fdegaz sv ancien.zT
@@ -299,7 +299,7 @@ calculsBoucleIter sv t iter ancien =
         , forcage_serre_CO2 = forcage_serre_CO2
         , forcage_serre_eau = forcage_serre_eau
         , g = g
-        , phieq = calcul_phieq sv zT
+        , phieq = calcul_phieq sv ancien.zT
         , tau_niveau_calottes = tau_niveau_calottes
         , zB_ocean = zB_ocean
         , zC_alteration = zC_alteration
@@ -317,6 +317,13 @@ calculsBoucleIter sv t iter ancien =
         , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+calcul_zT : Float -> Float -> Float -> Float
+calcul_zT zTeq zT_ancien dt_ =
+    calculT zTeq zT_ancien PhysicsConstants.tau_temperature dt_
+        |> min 1.0e6
+        |> max 0
 
 
 calcul_zTeq : Float -> Float -> Float

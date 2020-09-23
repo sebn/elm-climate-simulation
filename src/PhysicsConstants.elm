@@ -37,6 +37,7 @@ module PhysicsConstants exposing
     , tKelvin
     , tau_niveau_calottes_deglacement
     , tau_niveau_calottes_englacement
+    , tau_temperature
     , tcrit_oce
     , temperature_1750
     , temperature_LGM
@@ -164,6 +165,13 @@ precession_actuel =
 puissance_recue_zero : Float
 puissance_recue_zero =
     1370 / 4
+
+
+{-| en années
+-}
+tau_temperature : Float
+tau_temperature =
+    30
 
 
 tcrit_oce : Float

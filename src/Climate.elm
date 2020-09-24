@@ -164,10 +164,12 @@ calculsBoucleT sv t anciens =
         anciens
 
 
+ev : ExperienceValues
 ev =
     EV.fromEcheance 10000
 
 
+calcul_zT0 : SimulationValues -> Float
 calcul_zT0 sv =
     (+) PhysicsConstants.tKelvin <|
         case truncate sv.annee_debut of
@@ -178,6 +180,7 @@ calcul_zT0 sv =
                 PhysicsConstants.temperature_actuelle
 
 
+calcul_zphig0 : SimulationValues -> Float
 calcul_zphig0 sv =
     case truncate sv.annee_debut of
         1750 ->
@@ -187,6 +190,7 @@ calcul_zphig0 sv =
             ModelPhysicsConstants.niveau_calottes_actuel
 
 
+zpuit_oce0 : SimulationValues -> Float
 zpuit_oce0 sv =
     if sv.fixed_concentration then
         -- undefined in SimClimat
@@ -469,10 +473,12 @@ calcul_zCO2 ancien emission_coo_ppm dt_ =
 
 {-| ppm/an
 -}
+calcul_emission_coo_ppm : Float -> Float
 calcul_emission_coo_ppm zsomme_flux =
     zsomme_flux * (PhysicsConstants.concentration_coo_actuel / PhysicsConstants.coo_Gt_act)
 
 
+calcul_zsomme_flux_const : SimulationValues -> Float -> Float -> Float -> Float -> Float
 calcul_zsomme_flux_const sv zpuit_oce zpuit_bio zB_ocean zT_ancien =
     max 0 (min 1 (1 - zpuit_oce - zpuit_bio))
         * (sv.emit_anthro_coo_value + sv.volcan_value)

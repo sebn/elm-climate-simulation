@@ -1,9 +1,14 @@
 module Climate exposing
     ( SimulationValues
+    , fromSimClimat
     , simulate
+    , toSimClimat
     )
 
 import ExperienceValues as EV exposing (ExperienceValues)
+import Json.Decode as JD
+import Json.Decode.Pipeline as JDP
+import Json.Encode as JE
 import List.Nonempty as NEList
 import ModelPhysicsConstants
 import PhysicsConstants
@@ -38,6 +43,97 @@ type alias SimulationValues =
     }
 
 
+fromSimClimat : JD.Value -> Result JD.Error SimulationValues
+fromSimClimat json =
+    let
+        init_temperature_data sv =
+            Ok { sv | temperature_data = temperature_data_array sv }
+    in
+    json
+        |> JD.decodeValue simulationValuesDecoder
+        |> Result.andThen init_temperature_data
+
+
+toSimClimat : SimulationValues -> JE.Value
+toSimClimat sv =
+    JE.object
+        [ ( "annee_debut", JE.float sv.annee_debut )
+        , ( "fixed_eau", JE.bool sv.fixed_eau )
+        , ( "fixed_concentration", JE.bool sv.fixed_concentration )
+        , ( "debranche_biologie", JE.bool sv.debranche_biologie )
+        , ( "fixed_ocean", JE.bool sv.fixed_ocean )
+        , ( "debranche_ocean", JE.bool sv.debranche_ocean )
+        , ( "fixed_albedo", JE.bool sv.fixed_albedo )
+        , ( "rapport_H2O_value", JE.float sv.rapport_H2O_value )
+        , ( "puit_bio_value", JE.float sv.puit_bio_value )
+        , ( "puit_oce_value", JE.float sv.puit_oce_value )
+        , ( "albedo_value", JE.float sv.albedo_value )
+        , ( "coo_concentr_value", JE.float sv.coo_concentr_value )
+        , ( "puissance_soleil_value", JE.float sv.puissance_soleil_value )
+        , ( "distance_ts_value", JE.float sv.distance_ts_value )
+        , ( "obliquite_value", JE.float sv.obliquite_value )
+        , ( "excentricite_value", JE.float sv.excentricite_value )
+        , ( "precession_value", JE.float sv.precession_value )
+        , ( "alteration_value", JE.float sv.alteration_value )
+        , ( "emit_anthro_coo_value", JE.float sv.emit_anthro_coo_value )
+        , ( "volcan_value", JE.float sv.volcan_value )
+        , ( "stockage_biologique_value", JE.float sv.stockage_biologique_value )
+        , ( "temperature_data", dataArrayToSimClimat sv.temperature_data )
+        ]
+
+
+simulationValuesDecoder : JD.Decoder SimulationValues
+simulationValuesDecoder =
+    JD.succeed SimulationValues
+        |> JDP.required "annee_debut" JD.float
+        |> JDP.required "fixed_eau" JD.bool
+        |> JDP.required "fixed_concentration" JD.bool
+        |> JDP.required "debranche_biologie" JD.bool
+        |> JDP.required "fixed_ocean" JD.bool
+        |> JDP.required "debranche_ocean" JD.bool
+        |> JDP.required "fixed_albedo" JD.bool
+        |> JDP.required "rapport_H2O_value" JD.float
+        |> JDP.required "puit_bio_value" JD.float
+        |> JDP.required "puit_oce_value" JD.float
+        |> JDP.required "albedo_value" JD.float
+        |> JDP.required "coo_concentr_value" JD.float
+        |> JDP.required "puissance_soleil_value" JD.float
+        |> JDP.required "distance_ts_value" JD.float
+        |> JDP.required "obliquite_value" JD.float
+        |> JDP.required "excentricite_value" JD.float
+        |> JDP.required "precession_value" JD.float
+        |> JDP.required "alteration_value" JD.float
+        |> JDP.required "emit_anthro_coo_value" JD.float
+        |> JDP.required "volcan_value" JD.float
+        |> JDP.required "stockage_biologique_value" JD.float
+        |> JDP.hardcoded dataArrayEmpty
+
+
+dataArrayToSimClimat : DataArray Ancien -> JE.Value
+dataArrayToSimClimat array =
+    JE.object
+        [ ( "datas", JE.list ancienToSimClimat array.datas )
+        , ( "past_datas", JE.list JE.float array.past_datas )
+        , ( "resolution", JE.int array.resolution )
+        , ( "indice_min", JE.int array.indice_min )
+        , ( "indice_max", JE.int array.indice_max )
+        , ( "imin", JE.int array.imin )
+        , ( "imax", JE.int array.imax )
+        ]
+
+
+dataArrayEmpty : DataArray Ancien
+dataArrayEmpty =
+    { datas = []
+    , past_datas = []
+    , resolution = 100
+    , indice_min = 0
+    , indice_max = 100
+    , imin = 0
+    , imax = 100
+    }
+
+
 type alias DataArray a =
     { -- N : Int
       datas : List a
@@ -65,6 +161,42 @@ temperature_data_array sv =
     , imin = 0
     , imax = 100
     }
+
+
+ancienToSimClimat : Ancien -> JE.Value
+ancienToSimClimat ancien =
+    JE.object
+        [ ( "alteration_max", JE.float ancien.alteration_max )
+        , ( "b_ocean", JE.float ancien.b_ocean )
+        , ( "fdegaz", JE.float ancien.fdegaz )
+        , ( "fin", JE.float ancien.fin )
+        , ( "forcage_serre", JE.float ancien.forcage_serre )
+        , ( "forcage_serre_CO2", JE.float ancien.forcage_serre_CO2 )
+        , ( "forcage_serre_eau", JE.float ancien.forcage_serre_eau )
+        , ( "g", JE.float ancien.g )
+        , ( "insol65N", JE.float ancien.insol65N )
+        , ( "oscillation", JE.int ancien.oscillation )
+        , ( "phieq", JE.float ancien.phieq )
+        , ( "tau_niveau_calottes", JE.float ancien.tau_niveau_calottes )
+        , ( "zB_ocean", JE.float ancien.zB_ocean )
+        , ( "zC_alteration", JE.float ancien.zC_alteration )
+        , ( "zC_stockage", JE.float ancien.zC_stockage )
+        , ( "zCO2", JE.float ancien.zCO2 )
+
+        -- , ( "zCO2_prec", JE.float ancien.zCO2_prec )
+        , ( "zCO2eq_oce", JE.float ancien.zCO2eq_oce )
+        , ( "zT", JE.float ancien.zT )
+        , ( "zT_ancien", JE.float ancien.zT_ancien )
+        , ( "zTeq", JE.float ancien.zTeq )
+        , ( "zalbedo", JE.float ancien.zalbedo )
+        , ( "zphig", JE.float ancien.zphig )
+        , ( "zphig_ancien", JE.float ancien.zphig_ancien )
+        , ( "zpuit_bio", JE.float ancien.zpuit_bio )
+        , ( "zpuit_oce", JE.float ancien.zpuit_oce )
+        , ( "zrapport_H2O", JE.float ancien.zrapport_H2O )
+        , ( "zsomme_C", JE.float ancien.zsomme_C )
+        , ( "zsomme_flux_const", JE.float ancien.zsomme_flux_const )
+        ]
 
 
 type alias Ancien =

@@ -1,29 +1,33 @@
 port module TestWrapper exposing (main)
 
-import Climate
+import Climate exposing (SimulationValues)
 
 
 main : Program () () Msg
 main =
     Platform.worker
-        { init = always ((), Cmd.none)
+        { init = always ( (), Cmd.none )
         , update = update
         , subscriptions = subscriptions
         }
 
 
-port input : (Climate.Config -> msg) -> Sub msg
-port output : Climate.Simulation -> Cmd msg
+port input : (SimulationValues -> msg) -> Sub msg
+
+
+port output : SimulationValues -> Cmd msg
 
 
 subscriptions : () -> Sub Msg
 subscriptions _ =
     input Run
 
-type Msg
-    = Run Climate.Config
 
-update : Msg -> () -> ((), Cmd Msg)
+type Msg
+    = Run SimulationValues
+
+
+update : Msg -> () -> ( (), Cmd Msg )
 update msg _ =
     case msg of
         Run config ->

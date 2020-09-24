@@ -1,6 +1,8 @@
 port module TestWrapper exposing (main)
 
 import Climate exposing (SimulationValues)
+import Json.Decode as JD
+import Json.Encode as JE
 
 
 main : Program () () Msg
@@ -12,10 +14,10 @@ main =
         }
 
 
-port input : (SimulationValues -> msg) -> Sub msg
+port input : (JD.Value -> msg) -> Sub msg
 
 
-port output : SimulationValues -> Cmd msg
+port output : JE.Value -> Cmd msg
 
 
 subscriptions : () -> Sub Msg
@@ -24,15 +26,23 @@ subscriptions _ =
 
 
 type Msg
-    = Run SimulationValues
+    = Run JD.Value
 
 
 update : Msg -> () -> ( (), Cmd Msg )
 update msg _ =
     case msg of
-        Run config ->
+        Run json ->
             ( ()
-            , config
-                |> Climate.simulate
-                |> output
+            , output <|
+                case Climate.fromSimClimat json of
+                    Ok sv ->
+                        sv
+                            |> Climate.simulate
+                            |> Climate.toSimClimat
+
+                    Err err ->
+                        err
+                            |> JD.errorToString
+                            |> JE.string
             )

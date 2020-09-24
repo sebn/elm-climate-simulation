@@ -31,10 +31,16 @@ test('starting from now', async () => {
 });
 
 var assertSameResultsAsync = async sv => {
-    assert.deepEqual(
-        runSimClimat(sv),
-        await runElmClimateAsync(sv)
-    );
+    const elmResult = await runElmClimateAsync(sv);
+
+    if (typeof elmResult == 'string') {
+        assert.fail(elmResult);
+    } else {
+        assert.deepEqual(
+            runSimClimat(sv),
+            elmResult
+        );
+    }
 };
 
 var runElmClimateAsync = sv =>
@@ -104,6 +110,7 @@ var normalizeSimulationValues = sv => {
     // delete sv['temperature_data'];
     if (sv['temperature_data']) {
         delete sv['temperature_data']['N'];
+        // delete sv['temperature_data']['past_datas'];
         // delete sv['temperature_data']['datas'];
         if (sv['temperature_data']['datas'][0]) {
             delete sv['temperature_data']['datas'][0]['alteration_max'];

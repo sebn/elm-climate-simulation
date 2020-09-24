@@ -1,6 +1,5 @@
 module Climate exposing
-    ( Config
-    , Simulation
+    ( SimulationValues
     , simulate
     )
 
@@ -10,32 +9,7 @@ import ModelPhysicsConstants
 import PhysicsConstants
 
 
-type alias Config =
-    { annee_debut : Float
-    , fixed_eau : Bool
-    , fixed_concentration : Bool
-    , debranche_biologie : Bool
-    , fixed_ocean : Bool
-    , debranche_ocean : Bool
-    , fixed_albedo : Bool
-    , rapport_H2O_value : Float
-    , puit_bio_value : Float
-    , puit_oce_value : Float
-    , albedo_value : Float
-    , coo_concentr_value : Float
-    , puissance_soleil_value : Float
-    , distance_ts_value : Float
-    , obliquite_value : Float
-    , excentricite_value : Float
-    , precession_value : Float
-    , alteration_value : Float
-    , emit_anthro_coo_value : Float
-    , volcan_value : Float
-    , stockage_biologique_value : Float
-    }
-
-
-type alias Simulation =
+type alias SimulationValues =
     { -- CONFIG
       annee_debut : Float
     , fixed_eau : Bool
@@ -81,7 +55,7 @@ n =
     100
 
 
-temperature_data_array : Config -> DataArray Ancien
+temperature_data_array : SimulationValues -> DataArray Ancien
 temperature_data_array sv =
     { datas = boucleT sv
     , past_datas = temperature_past_data sv.annee_debut
@@ -126,7 +100,7 @@ type alias Ancien =
     }
 
 
-boucleT : Config -> List Ancien
+boucleT : SimulationValues -> List Ancien
 boucleT sv =
     let
         zT0 =
@@ -179,7 +153,7 @@ boucleT sv =
         |> (::) ancien
 
 
-calculsBoucleT : Config -> (Int -> NEList.Nonempty Ancien -> NEList.Nonempty Ancien)
+calculsBoucleT : SimulationValues -> (Int -> NEList.Nonempty Ancien -> NEList.Nonempty Ancien)
 calculsBoucleT sv t anciens =
     let
         ancien =
@@ -225,7 +199,7 @@ zpuit_oce0 sv =
         sv.puit_oce_value / 100
 
 
-boucleIter : Config -> Int -> Ancien -> Ancien
+boucleIter : SimulationValues -> Int -> Ancien -> Ancien
 boucleIter sv t ancien =
     List.range 1 niter
         |> List.foldl
@@ -233,7 +207,7 @@ boucleIter sv t ancien =
             { ancien | oscillation = 0 }
 
 
-calculsBoucleIter : Config -> Int -> (Int -> Ancien -> Ancien)
+calculsBoucleIter : SimulationValues -> Int -> (Int -> Ancien -> Ancien)
 calculsBoucleIter sv t iter ancien =
     let
         tau_niveau_calottes =
@@ -342,7 +316,7 @@ calculsBoucleIter sv t iter ancien =
     }
 
 
-calcul_oscillation : Config -> Int -> Ancien -> Float -> Float -> Int
+calcul_oscillation : SimulationValues -> Int -> Ancien -> Float -> Float -> Int
 calcul_oscillation sv iter ancien zT zCO2 =
     let
         oscillation =
@@ -466,7 +440,7 @@ calcul_forcage_serre_H2O zrapport_H2O =
         ModelPhysicsConstants.a_H2O
 
 
-calcul_rapport_H2O : Config -> Float -> Float
+calcul_rapport_H2O : SimulationValues -> Float -> Float
 calcul_rapport_H2O sv zT =
     if sv.fixed_eau then
         sv.rapport_H2O_value / 100
@@ -531,7 +505,7 @@ calcul_zCO2eq_oce zT =
         + max 0 (5 * (zT - PhysicsConstants.tKelvin - c))
 
 
-calcul_fdegaz : Config -> Float -> Float
+calcul_fdegaz : SimulationValues -> Float -> Float
 calcul_fdegaz sv zT =
     if sv.debranche_ocean || sv.fixed_ocean then
         0
@@ -551,19 +525,19 @@ calcul_zsomme_C zpuit_oce zpuit_bio zC_alteration zC_stockage zB_ocean =
         * zB_ocean
 
 
-calcul_zC_stockage : Config -> Float -> Float
+calcul_zC_stockage : SimulationValues -> Float -> Float
 calcul_zC_stockage sv zphig_ancien =
     calcul_zC_alteration
         (-sv.stockage_biologique_value * 1.0e-3)
         zphig_ancien
 
 
-calcul_fin : Config -> Float -> Float
+calcul_fin : SimulationValues -> Float -> Float
 calcul_fin sv zalbedo =
     calcul_fin0 sv * (1 - zalbedo)
 
 
-calcul_albedo : Config -> Float -> Float
+calcul_albedo : SimulationValues -> Float -> Float
 calcul_albedo sv zphig =
     -- if (this.simulationValues.fixed_albedo) {
     --     zalbedo = this.simulationValues.albedo_value / 100.; // conversion albedo en % en albedo en unité
@@ -594,7 +568,7 @@ calcul_albedo sv zphig =
             * (ModelPhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
 
 
-calcul_zpuit_bio : Config -> Float
+calcul_zpuit_bio : SimulationValues -> Float
 calcul_zpuit_bio sv =
     if sv.fixed_concentration then
         -- undefined in SimClimat
@@ -607,7 +581,7 @@ calcul_zpuit_bio sv =
         sv.puit_bio_value / 100
 
 
-calcul_zpuit_oce : Config -> Float -> Float
+calcul_zpuit_oce : SimulationValues -> Float -> Float
 calcul_zpuit_oce sv zT =
     if sv.debranche_ocean || sv.fixed_ocean then
         0
@@ -639,7 +613,7 @@ calcul_zC_alteration cmax zphig =
         0.0
 
 
-calcul_zphig : Config -> Ancien -> Float -> Float
+calcul_zphig : SimulationValues -> Ancien -> Float -> Float
 calcul_zphig sv ancien tau_niveau_calottes =
     calculT (calcul_phieq sv ancien.zT) ancien.zphig tau_niveau_calottes dt
         |> max 0
@@ -651,7 +625,7 @@ calculT tEq tPrec tau dt_ =
     tPrec + (tEq - tPrec) * (1 - exp (-dt_ / tau))
 
 
-calcul_tau_niveau_calottes : Config -> Int -> Float
+calcul_tau_niveau_calottes : SimulationValues -> Int -> Float
 calcul_tau_niveau_calottes sv t =
     -- let
     --     -- FIXME
@@ -664,7 +638,7 @@ calcul_tau_niveau_calottes sv t =
     PhysicsConstants.tau_niveau_calottes_englacement
 
 
-calcul_phieq : Config -> Float -> Float
+calcul_phieq : SimulationValues -> Float -> Float
 calcul_phieq sv zT =
     (ModelPhysicsConstants.a_calottes
         * (zT - PhysicsConstants.tKelvin)
@@ -678,12 +652,12 @@ calcul_phieq sv zT =
         |> max PhysicsConstants.niveau_calottes_min
 
 
-calcul_alteration_max : Config -> Float
+calcul_alteration_max : SimulationValues -> Float
 calcul_alteration_max sv =
     ModelPhysicsConstants.c_alteration_naturel * (sv.alteration_value / 100.0)
 
 
-calcul_b_ocean : Config -> Float
+calcul_b_ocean : SimulationValues -> Float
 calcul_b_ocean sv =
     if sv.debranche_ocean then
         0
@@ -697,7 +671,7 @@ calcul_b_ocean sv =
 
 {-| Insolation 65º lat. N
 -}
-insol65N : Config -> Float
+insol65N : SimulationValues -> Float
 insol65N sv =
     calcul_fin0 sv
         * cos (delta_angle sv)
@@ -718,7 +692,7 @@ insol65N sv =
             )
 
 
-delta_angle : Config -> Float
+delta_angle : SimulationValues -> Float
 delta_angle sv =
     abs
         ((toFloat PhysicsConstants.lat_Mil - sv.obliquite_value)
@@ -728,7 +702,7 @@ delta_angle sv =
         )
 
 
-calcul_fin0 : Config -> Float
+calcul_fin0 : SimulationValues -> Float
 calcul_fin0 sv =
     -- Fin0 = CPhysicsConstants.puissance_recue_zero * (this.simulationValues.puissance_soleil_value / 100.) / (this.simulationValues.distance_ts_value / 100) / (this.simulationValues.distance_ts_value / 100);
     PhysicsConstants.puissance_recue_zero
@@ -795,7 +769,7 @@ internEcheance =
     100.0
 
 
-simulate : Config -> Simulation
+simulate : SimulationValues -> SimulationValues
 simulate config =
     { annee_debut = config.annee_debut
     , fixed_eau = config.fixed_eau

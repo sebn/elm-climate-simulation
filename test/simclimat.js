@@ -44,7 +44,18 @@ var runElmClimateAsync = sv =>
             unsubscribe = elmTestWrapper.ports.output.subscribe(svOut => {
                 resolve(normalizeSimulationValues(svOut));
             });
-            elmTestWrapper.ports.input.send(sv);
+            elmTestWrapper.ports.input.send({
+                ...sv,
+                temperature_data: {
+                    datas: [],
+                    past_datas: [],
+                    resolution: 100,
+                    indice_min: 0,
+                    indice_max: 100,
+                    imin: 0,
+                    imax: 100
+                }
+            });
         } catch (err) {
             reject(err);
         } finally {

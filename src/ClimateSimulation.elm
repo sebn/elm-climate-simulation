@@ -15,7 +15,7 @@ import List.Nonempty as NEList
 
 type alias SimulationValues =
     { -- CONFIG
-      annee_debut : Float
+      initialState : InitialState
     , fixed_eau : Bool
     , fixed_concentration : Bool
     , debranche_biologie : Bool
@@ -56,7 +56,7 @@ fromSimClimat json =
 toSimClimat : SimulationValues -> JE.Value
 toSimClimat sv =
     JE.object
-        [ ( "annee_debut", JE.float sv.annee_debut )
+        [ ( "annee_debut", JE.int (startYear sv.initialState) )
         , ( "fixed_eau", JE.bool sv.fixed_eau )
         , ( "fixed_concentration", JE.bool sv.fixed_concentration )
         , ( "debranche_biologie", JE.bool sv.debranche_biologie )
@@ -84,7 +84,7 @@ toSimClimat sv =
 simulationValuesDecoder : JD.Decoder SimulationValues
 simulationValuesDecoder =
     JD.succeed SimulationValues
-        |> JDP.required "annee_debut" JD.float
+        |> JDP.required "annee_debut" initialStateDecoder
         |> JDP.required "fixed_eau" JD.bool
         |> JDP.required "fixed_concentration" JD.bool
         |> JDP.required "debranche_biologie" JD.bool
@@ -106,6 +106,44 @@ simulationValuesDecoder =
         |> JDP.required "volcan_value" JD.float
         |> JDP.required "stockage_biologique_value" JD.float
         |> JDP.hardcoded dataArrayEmpty
+
+
+
+-- INITIAL STATE
+
+
+type InitialState
+    = Now
+    | PreIndustrial
+
+
+startYear : InitialState -> Basics.Int
+startYear initialState =
+    case initialState of
+        PreIndustrial ->
+            1750
+
+        Now ->
+            2007
+
+
+initialStateDecoder : JD.Decoder InitialState
+initialStateDecoder =
+    JD.float |> JD.andThen (truncate >> initialStateDecoderFromYear)
+
+
+initialStateDecoderFromYear : Int -> JD.Decoder InitialState
+initialStateDecoderFromYear year =
+    case year of
+        1750 ->
+            JD.succeed PreIndustrial
+
+        2007 ->
+            JD.succeed Now
+
+        _ ->
+            -- FIXME
+            JD.succeed Now
 
 
 dataArrayToSimClimat : DataArray Ancien -> JE.Value
@@ -153,7 +191,7 @@ n =
 temperature_data_array : SimulationValues -> DataArray Ancien
 temperature_data_array sv =
     { datas = boucleT sv
-    , past_datas = temperature_past_data sv.annee_debut
+    , past_datas = temperature_past_data sv.initialState
     , resolution = 100
     , indice_min = 0
     , indice_max = 100
@@ -303,8 +341,8 @@ ev =
 calcul_zT0 : SimulationValues -> Float
 calcul_zT0 sv =
     (+) PhysicsConstants.tKelvin <|
-        case truncate sv.annee_debut of
-            1750 ->
+        case sv.initialState of
+            PreIndustrial ->
                 PhysicsConstants.temperature_1750
 
             _ ->
@@ -313,8 +351,8 @@ calcul_zT0 sv =
 
 calcul_zphig0 : SimulationValues -> Float
 calcul_zphig0 sv =
-    case truncate sv.annee_debut of
-        1750 ->
+    case sv.initialState of
+        PreIndustrial ->
             PhysicsConstants.niveau_calottes_1750
 
         _ ->
@@ -872,14 +910,14 @@ log =
 --  Math.max(4, Math.trunc(3 * Math.exp(0.3 * Math.log(this.experienceValues.temps_elem()))));
 
 
-temperature_past_data : Float -> List Float
-temperature_past_data annee_debut =
+temperature_past_data : InitialState -> List Float
+temperature_past_data initialState =
     (::) 0 <|
-        case truncate annee_debut of
-            1750 ->
+        case initialState of
+            PreIndustrial ->
                 List.repeat n 14.399999999999977
 
-            _ ->
+            Now ->
                 List.map temperature_past_value (List.range 1 100)
 
 
@@ -908,7 +946,7 @@ internEcheance =
 
 simulate : SimulationValues -> SimulationValues
 simulate config =
-    { annee_debut = config.annee_debut
+    { initialState = config.initialState
     , fixed_eau = config.fixed_eau
     , fixed_concentration = config.fixed_concentration
     , debranche_biologie = config.debranche_biologie

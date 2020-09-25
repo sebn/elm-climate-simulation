@@ -10,7 +10,6 @@ import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Json.Encode as JE
 import List.Nonempty as NEList
-import ModelPhysicsConstants
 import PhysicsConstants
 
 
@@ -319,7 +318,7 @@ calcul_zphig0 sv =
             PhysicsConstants.niveau_calottes_1750
 
         _ ->
-            ModelPhysicsConstants.niveau_calottes_actuel
+            PhysicsConstants.niveau_calottes_actuel
 
 
 zpuit_oce0 : SimulationValues -> Float
@@ -520,7 +519,7 @@ calcul_zTeq fin g =
 
 calcul_G : Float -> Float
 calcul_G forcage_serre =
-    ModelPhysicsConstants.g0
+    PhysicsConstants.g0
         - forcage_serre
         |> max PhysicsConstants.g_min
         |> min 1
@@ -531,11 +530,11 @@ calcul_forcage_serre_CO2 zCO2 =
     if zCO2 < PhysicsConstants.concentration_coo_limite_bas then
         -- relation linéaire, extrapolation basse
         -PhysicsConstants.q_CO2
-            * ModelPhysicsConstants.g0
+            * PhysicsConstants.g0
             + zCO2
             / PhysicsConstants.concentration_coo_limite_bas
             * (PhysicsConstants.q_CO2
-                * ModelPhysicsConstants.g0
+                * PhysicsConstants.g0
                 + PhysicsConstants.a_coo
                 * log (PhysicsConstants.concentration_coo_limite_bas / PhysicsConstants.concentration_coo_1750)
               )
@@ -560,7 +559,7 @@ calcul_forcage_serre_CO2 zCO2 =
 calcul_forcage_serre_H2O : Float -> Float
 calcul_forcage_serre_H2O zrapport_H2O =
     if zrapport_H2O > 1.0e-5 then
-        ModelPhysicsConstants.a_H2O
+        PhysicsConstants.a_H2O
             * (1
                 - exp (PhysicsConstants.pow_H2O * log zrapport_H2O)
               )
@@ -573,7 +572,7 @@ calcul_forcage_serre_H2O zrapport_H2O =
               )
 
     else
-        ModelPhysicsConstants.a_H2O
+        PhysicsConstants.a_H2O
 
 
 calcul_rapport_H2O : SimulationValues -> Float -> Float
@@ -694,16 +693,16 @@ calcul_albedo sv zphig =
         sv.albedo_value / 100
 
     else if zphig > PhysicsConstants.phig_crit then
-        ModelPhysicsConstants.albedo_crit
+        PhysicsConstants.albedo_crit
             + (zphig - PhysicsConstants.phig_crit)
             / (PhysicsConstants.niveau_calottes_max - PhysicsConstants.phig_crit)
-            * (PhysicsConstants.albedo_ter - ModelPhysicsConstants.albedo_crit)
+            * (PhysicsConstants.albedo_ter - PhysicsConstants.albedo_crit)
 
     else
         PhysicsConstants.albedo_glace_const
             + (zphig - PhysicsConstants.niveau_calottes_min)
             / (PhysicsConstants.phig_crit - PhysicsConstants.niveau_calottes_min)
-            * (ModelPhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
+            * (PhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
 
 
 calcul_zpuit_bio : SimulationValues -> Float
@@ -778,12 +777,12 @@ calcul_tau_niveau_calottes sv t =
 
 calcul_phieq : SimulationValues -> Float -> Float
 calcul_phieq sv zT =
-    (ModelPhysicsConstants.a_calottes
+    (PhysicsConstants.a_calottes
         * (zT - PhysicsConstants.tKelvin)
-        + ModelPhysicsConstants.b_calottes
+        + PhysicsConstants.b_calottes
         + PhysicsConstants.c_calottes
         * (insol65N sv
-            - ModelPhysicsConstants.insol_actuel
+            - PhysicsConstants.insol_actuel
           )
     )
         |> min PhysicsConstants.niveau_calottes_max
@@ -792,7 +791,7 @@ calcul_phieq sv zT =
 
 calcul_alteration_max : SimulationValues -> Float
 calcul_alteration_max sv =
-    ModelPhysicsConstants.c_alteration_naturel * (sv.alteration_value / 100.0)
+    PhysicsConstants.c_alteration_naturel * (sv.alteration_value / 100.0)
 
 
 calcul_b_ocean : SimulationValues -> Float

@@ -1,4 +1,4 @@
-module PhysicsConstants exposing
+module ClimateSimulation.PhysicsConstants exposing
     ( a_H2O
     , a_calottes
     , a_coo

@@ -1,11 +1,16 @@
 module PhysicsConstants exposing
-    ( a_coo
+    ( a_H2O
+    , a_calottes
+    , a_coo
     , a_rankine
     , albedo_1750
+    , albedo_crit
     , albedo_glace_const
     , albedo_ter
+    , b_calottes
     , b_ocean
     , b_rankine
+    , c_alteration_naturel
     , c_calottes
     , concentration_coo_1750
     , concentration_coo_actuel
@@ -16,11 +21,14 @@ module PhysicsConstants exposing
     , dFdegaz
     , deltaT_last_century
     , excentricite_actuel
+    , g0
     , g_min
+    , insol_actuel
     , lat_Mil
     , niveau_calotte_critique_coo
     , niveau_calottes_1750
     , niveau_calottes_LGM_noinsol
+    , niveau_calottes_actuel
     , niveau_calottes_max
     , niveau_calottes_min
     , obliquite_actuel
@@ -46,6 +54,22 @@ module PhysicsConstants exposing
     )
 
 
+a_H2O : Float
+a_H2O =
+    -q_H2O * (1 - g0)
+
+
+{-| On suppose qu'une partie de la variation du niveau de calotte est lié à
+l'effet de la température (ici 40%), et l'autre est liée à l'effet de la
+variation d'insolation.
+-}
+a_calottes : Float
+a_calottes =
+    (niveau_calottes_1750 - niveau_calottes_LGM_noinsol)
+        / (temperature_1750 - temperature_LGM)
+        * 0.8
+
+
 a_coo : Float
 a_coo =
     1.8e-2
@@ -61,6 +85,19 @@ albedo_1750 =
     0.33
 
 
+albedo_crit : Float
+albedo_crit =
+    (albedo_1750
+        - albedo_ter
+        * (niveau_calottes_1750 - phig_crit)
+        / (niveau_calottes_max - phig_crit)
+    )
+        / (1
+            - (niveau_calottes_1750 - phig_crit)
+            / (niveau_calottes_max - phig_crit)
+          )
+
+
 albedo_glace_const : Float
 albedo_glace_const =
     0.9
@@ -69,6 +106,11 @@ albedo_glace_const =
 albedo_ter : Float
 albedo_ter =
     0.25
+
+
+b_calottes : Float
+b_calottes =
+    niveau_calottes_1750 - (a_calottes * temperature_1750)
 
 
 b_ocean : Float
@@ -81,6 +123,11 @@ b_rankine =
     5120
 
 
+c_alteration_naturel : Float
+c_alteration_naturel =
+    -volcanisme_actuel / concentration_coo_1750
+
+
 c_calottes : Float
 c_calottes =
     0.2
@@ -91,9 +138,25 @@ concentration_coo_1750 =
     280
 
 
+delta_angle_actuel : Float
+delta_angle_actuel =
+    (toFloat lat_Mil - obliquite_actuel)
+        / 360
+        * 2
+        * pi
+
+
 excentricite_actuel : Float
 excentricite_actuel =
     0.0167
+
+
+g0 : Float
+g0 =
+    puissance_recue_zero
+        * (1 - albedo_1750)
+        / sigma
+        / exp (4 * log (tKelvin + temperature_1750))
 
 
 {-| `forcage_serre` min, pour éviter des NaN
@@ -101,6 +164,11 @@ excentricite_actuel =
 g_min : Float
 g_min =
     1.0e-4
+
+
+insol_actuel : Float
+insol_actuel =
+    puissance_recue_zero * cos delta_angle_actuel
 
 
 lat_Mil : Int
@@ -121,6 +189,17 @@ niveau_calottes_1750 =
 niveau_calottes_LGM_noinsol : Float
 niveau_calottes_LGM_noinsol =
     52
+
+
+niveau_calottes_actuel : Float
+niveau_calottes_actuel =
+    niveau_calottes_1750
+        + (a_calottes
+            * temperature_actuelle
+            + b_calottes
+            - niveau_calottes_1750
+          )
+        * (1 - exp (-100 / tau_niveau_calottes_deglacement))
 
 
 niveau_calottes_max : Float
@@ -294,3 +373,17 @@ tau_niveau_calottes_englacement =
 volcanisme_actuel : Float
 volcanisme_actuel =
     0.083
+
+
+
+-- MATH HELPERS
+
+
+exp : Float -> Float
+exp =
+    (^) e
+
+
+log : Float -> Float
+log =
+    logBase e

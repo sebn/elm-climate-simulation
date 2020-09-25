@@ -1,4 +1,4 @@
-module Climate exposing
+module ClimateSimulation exposing
     ( SimulationValues
     , fromSimClimat
     , simulate

@@ -1,6 +1,6 @@
 port module TestWrapper exposing (main)
 
-import Climate exposing (SimulationValues)
+import ClimateSimulation exposing (SimulationValues)
 import Json.Decode as JD
 import Json.Encode as JE
 
@@ -35,11 +35,11 @@ update msg _ =
         Run json ->
             ( ()
             , output <|
-                case Climate.fromSimClimat json of
+                case ClimateSimulation.fromSimClimat json of
                     Ok sv ->
                         sv
-                            |> Climate.simulate
-                            |> Climate.toSimClimat
+                            |> ClimateSimulation.simulate
+                            |> ClimateSimulation.toSimClimat
 
                     Err err ->
                         err

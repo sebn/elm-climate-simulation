@@ -38,19 +38,13 @@ type alias SimulationValues =
     , stockage_biologique_value : Float
 
     -- RESULTS
-    , temperature_data : DataArray Ancien
+    , temperature_data : List Ancien
     }
 
 
 fromSimClimat : JD.Value -> Result JD.Error SimulationValues
 fromSimClimat json =
-    let
-        init_temperature_data sv =
-            Ok { sv | temperature_data = temperature_data_array sv }
-    in
-    json
-        |> JD.decodeValue simulationValuesDecoder
-        |> Result.andThen init_temperature_data
+    JD.decodeValue simulationValuesDecoder json
 
 
 toSimClimat : SimulationValues -> JE.Value
@@ -77,7 +71,12 @@ toSimClimat sv =
         , ( "emit_anthro_coo_value", JE.float sv.emit_anthro_coo_value )
         , ( "volcan_value", JE.float sv.volcan_value )
         , ( "stockage_biologique_value", JE.float sv.stockage_biologique_value )
-        , ( "temperature_data", dataArrayToSimClimat sv.temperature_data )
+        , ( "temperature_data"
+          , toSimClimatDataArray
+                { data = sv.temperature_data
+                , pastData = temperature_past_data sv.initialState
+                }
+          )
         ]
 
 
@@ -105,7 +104,7 @@ simulationValuesDecoder =
         |> JDP.required "emit_anthro_coo_value" JD.float
         |> JDP.required "volcan_value" JD.float
         |> JDP.required "stockage_biologique_value" JD.float
-        |> JDP.hardcoded dataArrayEmpty
+        |> JDP.hardcoded []
 
 
 
@@ -146,58 +145,22 @@ initialStateDecoderFromYear year =
             JD.succeed Now
 
 
-dataArrayToSimClimat : DataArray Ancien -> JE.Value
-dataArrayToSimClimat array =
+toSimClimatDataArray : { data : List Ancien, pastData : List Float } -> JE.Value
+toSimClimatDataArray { data, pastData } =
     JE.object
-        [ ( "datas", JE.list ancienToSimClimat array.datas )
-        , ( "past_datas", JE.list JE.float array.past_datas )
-        , ( "resolution", JE.int array.resolution )
-        , ( "indice_min", JE.int array.indice_min )
-        , ( "indice_max", JE.int array.indice_max )
-        , ( "imin", JE.int array.imin )
-        , ( "imax", JE.int array.imax )
+        [ ( "datas", JE.list ancienToSimClimat data )
+        , ( "past_datas", JE.list JE.float pastData )
+        , ( "resolution", JE.int n )
+        , ( "indice_min", JE.int 0 )
+        , ( "indice_max", JE.int n )
+        , ( "imin", JE.int 0 )
+        , ( "imax", JE.int n )
         ]
-
-
-dataArrayEmpty : DataArray Ancien
-dataArrayEmpty =
-    { datas = []
-    , past_datas = []
-    , resolution = 100
-    , indice_min = 0
-    , indice_max = 100
-    , imin = 0
-    , imax = 100
-    }
-
-
-type alias DataArray a =
-    { -- N : Int
-      datas : List a
-    , past_datas : List Float
-    , resolution : Int
-    , indice_min : Int
-    , indice_max : Int
-    , imin : Int
-    , imax : Int
-    }
 
 
 n : Int
 n =
     100
-
-
-temperature_data_array : SimulationValues -> DataArray Ancien
-temperature_data_array sv =
-    { datas = boucleT sv
-    , past_datas = temperature_past_data sv.initialState
-    , resolution = 100
-    , indice_min = 0
-    , indice_max = 100
-    , imin = 0
-    , imax = 100
-    }
 
 
 ancienToSimClimat : Ancien -> JE.Value
@@ -967,5 +930,5 @@ simulate config =
     , emit_anthro_coo_value = config.emit_anthro_coo_value
     , volcan_value = config.volcan_value
     , stockage_biologique_value = config.stockage_biologique_value
-    , temperature_data = temperature_data_array config
+    , temperature_data = boucleT config
     }

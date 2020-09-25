@@ -5,12 +5,12 @@ module ClimateSimulation exposing
     , toSimClimat
     )
 
-import ExperienceValues as EV exposing (ExperienceValues)
+import ClimateSimulation.ExperienceValues as EV exposing (ExperienceValues)
+import ClimateSimulation.PhysicsConstants as PhysicsConstants
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Json.Encode as JE
 import List.Nonempty as NEList
-import PhysicsConstants
 
 
 type alias SimulationValues =

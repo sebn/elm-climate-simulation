@@ -6,6 +6,7 @@ module ClimateSimulation exposing
     )
 
 import ClimateSimulation.ExperienceValues as EV exposing (ExperienceValues)
+import ClimateSimulation.Math exposing (exp, log)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
@@ -857,16 +858,6 @@ dt =
 niter : Int
 niter =
     max 4 (truncate (3 * exp (0.3 * log (EV.temps_elem ev))))
-
-
-exp : Float -> Float
-exp =
-    (^) e
-
-
-log : Float -> Float
-log =
-    logBase e
 
 
 

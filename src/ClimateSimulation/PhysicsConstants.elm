@@ -53,6 +53,8 @@ module ClimateSimulation.PhysicsConstants exposing
     , volcanisme_actuel
     )
 
+import ClimateSimulation.Math exposing (exp, log)
+
 
 a_H2O : Float
 a_H2O =
@@ -373,17 +375,3 @@ tau_niveau_calottes_englacement =
 volcanisme_actuel : Float
 volcanisme_actuel =
     0.083
-
-
-
--- MATH HELPERS
-
-
-exp : Float -> Float
-exp =
-    (^) e
-
-
-log : Float -> Float
-log =
-    logBase e

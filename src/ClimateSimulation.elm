@@ -78,6 +78,12 @@ toSimClimat sv =
                 , pastData = temperature_past_data sv.initialState
                 }
           )
+        , ( "concentrations_coo_data"
+          , toSimClimatDataArray
+                { data = List.map .zCO2 sv.results
+                , pastData = []
+                }
+          )
         ]
 
 

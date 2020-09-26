@@ -74,7 +74,7 @@ toSimClimat sv =
         , ( "stockage_biologique_value", JE.float sv.stockage_biologique_value )
         , ( "temperature_data"
           , toSimClimatDataArray
-                { data = sv.temperature_data
+                { data = List.map .zT sv.temperature_data
                 , pastData = temperature_past_data sv.initialState
                 }
           )
@@ -146,10 +146,10 @@ initialStateDecoderFromYear year =
             JD.succeed Now
 
 
-toSimClimatDataArray : { data : List Ancien, pastData : List Float } -> JE.Value
+toSimClimatDataArray : { data : List Float, pastData : List Float } -> JE.Value
 toSimClimatDataArray { data, pastData } =
     JE.object
-        [ ( "datas", JE.list ancienToSimClimat data )
+        [ ( "datas", JE.list JE.float data )
         , ( "past_datas", JE.list JE.float pastData )
         , ( "resolution", JE.int n )
         , ( "indice_min", JE.int 0 )

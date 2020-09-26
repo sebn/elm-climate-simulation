@@ -109,7 +109,6 @@ var normalizeSimulationValues = sv => {
     delete sv['concentrations_coo_data'];
     // delete sv['temperature_data'];
     if (sv['temperature_data']) {
-        delete sv['temperature_data']['N'];
         // delete sv['temperature_data']['past_datas'];
         // delete sv['temperature_data']['datas'];
         if (sv['temperature_data']['datas'][0]) {

@@ -149,7 +149,8 @@ initialStateDecoderFromYear year =
 toSimClimatDataArray : { data : List Float, pastData : List Float } -> JE.Value
 toSimClimatDataArray { data, pastData } =
     JE.object
-        [ ( "datas", JE.list JE.float data )
+        [ ( "N", JE.int n )
+        , ( "datas", JE.list JE.float data )
         , ( "past_datas", JE.list JE.float pastData )
         , ( "resolution", JE.int n )
         , ( "indice_min", JE.int 0 )

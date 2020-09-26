@@ -39,7 +39,7 @@ type alias SimulationValues =
     , stockage_biologique_value : Float
 
     -- RESULTS
-    , temperature_data : List State
+    , results : List State
     }
 
 
@@ -74,7 +74,7 @@ toSimClimat sv =
         , ( "stockage_biologique_value", JE.float sv.stockage_biologique_value )
         , ( "temperature_data"
           , toSimClimatDataArray
-                { data = List.map .zT sv.temperature_data
+                { data = List.map .zT sv.results
                 , pastData = temperature_past_data sv.initialState
                 }
           )
@@ -922,5 +922,5 @@ simulate config =
     , emit_anthro_coo_value = config.emit_anthro_coo_value
     , volcan_value = config.volcan_value
     , stockage_biologique_value = config.stockage_biologique_value
-    , temperature_data = boucleT config
+    , results = boucleT config
     }

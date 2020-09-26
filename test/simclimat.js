@@ -137,7 +137,6 @@ var normalizeSimulationValues = sv => {
             delete sv['temperature_data']['datas'][0]['zsomme_flux_const'];
         }
     }
-    delete sv['niveau_calottes_data'];
     delete sv['niveau_mer_data'];
     delete sv['albedo_data'];
     // delete sv['annee_debut'];

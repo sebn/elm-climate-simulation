@@ -39,7 +39,7 @@ type alias SimulationValues =
     , stockage_biologique_value : Float
 
     -- RESULTS
-    , temperature_data : List Ancien
+    , temperature_data : List State
     }
 
 
@@ -164,43 +164,43 @@ n =
     100
 
 
-ancienToSimClimat : Ancien -> JE.Value
-ancienToSimClimat ancien =
+stateToSimClimat : State -> JE.Value
+stateToSimClimat state =
     JE.object
-        [ ( "alteration_max", JE.float ancien.alteration_max )
-        , ( "b_ocean", JE.float ancien.b_ocean )
-        , ( "fdegaz", JE.float ancien.fdegaz )
-        , ( "fin", JE.float ancien.fin )
-        , ( "forcage_serre", JE.float ancien.forcage_serre )
-        , ( "forcage_serre_CO2", JE.float ancien.forcage_serre_CO2 )
-        , ( "forcage_serre_eau", JE.float ancien.forcage_serre_eau )
-        , ( "g", JE.float ancien.g )
-        , ( "insol65N", JE.float ancien.insol65N )
-        , ( "oscillation", JE.int ancien.oscillation )
-        , ( "phieq", JE.float ancien.phieq )
-        , ( "tau_niveau_calottes", JE.float ancien.tau_niveau_calottes )
-        , ( "zB_ocean", JE.float ancien.zB_ocean )
-        , ( "zC_alteration", JE.float ancien.zC_alteration )
-        , ( "zC_stockage", JE.float ancien.zC_stockage )
-        , ( "zCO2", JE.float ancien.zCO2 )
+        [ ( "alteration_max", JE.float state.alteration_max )
+        , ( "b_ocean", JE.float state.b_ocean )
+        , ( "fdegaz", JE.float state.fdegaz )
+        , ( "fin", JE.float state.fin )
+        , ( "forcage_serre", JE.float state.forcage_serre )
+        , ( "forcage_serre_CO2", JE.float state.forcage_serre_CO2 )
+        , ( "forcage_serre_eau", JE.float state.forcage_serre_eau )
+        , ( "g", JE.float state.g )
+        , ( "insol65N", JE.float state.insol65N )
+        , ( "oscillation", JE.int state.oscillation )
+        , ( "phieq", JE.float state.phieq )
+        , ( "tau_niveau_calottes", JE.float state.tau_niveau_calottes )
+        , ( "zB_ocean", JE.float state.zB_ocean )
+        , ( "zC_alteration", JE.float state.zC_alteration )
+        , ( "zC_stockage", JE.float state.zC_stockage )
+        , ( "zCO2", JE.float state.zCO2 )
 
-        -- , ( "zCO2_prec", JE.float ancien.zCO2_prec )
-        , ( "zCO2eq_oce", JE.float ancien.zCO2eq_oce )
-        , ( "zT", JE.float ancien.zT )
-        , ( "zT_ancien", JE.float ancien.zT_ancien )
-        , ( "zTeq", JE.float ancien.zTeq )
-        , ( "zalbedo", JE.float ancien.zalbedo )
-        , ( "zphig", JE.float ancien.zphig )
-        , ( "zphig_ancien", JE.float ancien.zphig_ancien )
-        , ( "zpuit_bio", JE.float ancien.zpuit_bio )
-        , ( "zpuit_oce", JE.float ancien.zpuit_oce )
-        , ( "zrapport_H2O", JE.float ancien.zrapport_H2O )
-        , ( "zsomme_C", JE.float ancien.zsomme_C )
-        , ( "zsomme_flux_const", JE.float ancien.zsomme_flux_const )
+        -- , ( "zCO2_prec", JE.float state.zCO2_prec )
+        , ( "zCO2eq_oce", JE.float state.zCO2eq_oce )
+        , ( "zT", JE.float state.zT )
+        , ( "zT_ancien", JE.float state.zT_ancien )
+        , ( "zTeq", JE.float state.zTeq )
+        , ( "zalbedo", JE.float state.zalbedo )
+        , ( "zphig", JE.float state.zphig )
+        , ( "zphig_ancien", JE.float state.zphig_ancien )
+        , ( "zpuit_bio", JE.float state.zpuit_bio )
+        , ( "zpuit_oce", JE.float state.zpuit_oce )
+        , ( "zrapport_H2O", JE.float state.zrapport_H2O )
+        , ( "zsomme_C", JE.float state.zsomme_C )
+        , ( "zsomme_flux_const", JE.float state.zsomme_flux_const )
         ]
 
 
-type alias Ancien =
+type alias State =
     { alteration_max : Float
     , b_ocean : Float
     , fdegaz : Float
@@ -233,7 +233,7 @@ type alias Ancien =
     }
 
 
-boucleT : SimulationValues -> List Ancien
+boucleT : SimulationValues -> List State
 boucleT sv =
     let
         zT0 =
@@ -245,7 +245,7 @@ boucleT sv =
         zCO2 =
             sv.coo_concentr_value
 
-        ancien =
+        initialState =
             { alteration_max = calcul_alteration_max sv
             , b_ocean = calcul_b_ocean sv
             , fdegaz = 0
@@ -279,22 +279,23 @@ boucleT sv =
     in
     List.range 1 n
         |> List.foldl
-            (calculsBoucleT sv)
-            (NEList.fromElement ancien)
+            (prependNextResult sv)
+            (NEList.fromElement initialState)
         |> NEList.reverse
         |> NEList.tail
-        |> (::) ancien
+        |> (::) initialState
 
 
-calculsBoucleT : SimulationValues -> (Int -> NEList.Nonempty Ancien -> NEList.Nonempty Ancien)
-calculsBoucleT sv t anciens =
+prependNextResult : SimulationValues -> Int -> NEList.Nonempty State -> NEList.Nonempty State
+prependNextResult sv t previousStates =
     let
-        ancien =
-            NEList.head anciens
+        previousState =
+            NEList.head previousStates
+
+        nextState =
+            computeNextResult sv t previousState
     in
-    NEList.cons
-        (boucleIter sv t ancien)
-        anciens
+    NEList.cons nextState previousStates
 
 
 ev : ExperienceValues
@@ -336,55 +337,55 @@ zpuit_oce0 sv =
         sv.puit_oce_value / 100
 
 
-boucleIter : SimulationValues -> Int -> Ancien -> Ancien
-boucleIter sv t ancien =
+computeNextResult : SimulationValues -> Int -> State -> State
+computeNextResult sv t previous =
     List.range 1 niter
         |> List.foldl
-            (calculsBoucleIter sv t)
-            { ancien | oscillation = 0 }
+            (computeNextIntermediateState sv t)
+            { previous | oscillation = 0 }
 
 
-calculsBoucleIter : SimulationValues -> Int -> (Int -> Ancien -> Ancien)
-calculsBoucleIter sv t iter ancien =
+computeNextIntermediateState : SimulationValues -> Int -> Int -> State -> State
+computeNextIntermediateState sv t iter previousState =
     let
         tau_niveau_calottes =
             calcul_tau_niveau_calottes sv t
 
         zphig =
-            calcul_zphig sv ancien tau_niveau_calottes
+            calcul_zphig sv previousState tau_niveau_calottes
 
         zalbedo =
             calcul_albedo sv zphig
 
         zC_alteration =
-            calcul_zC_alteration ancien.alteration_max ancien.zphig
+            calcul_zC_alteration previousState.alteration_max previousState.zphig
 
         zpuit_oce =
-            calcul_zpuit_oce sv ancien.zT
+            calcul_zpuit_oce sv previousState.zT
 
         zC_stockage =
-            calcul_zC_stockage sv ancien.zphig
+            calcul_zC_stockage sv previousState.zphig
 
         zB_ocean =
-            calcul_zB_ocean ancien
+            calcul_zB_ocean previousState
 
         zsomme_flux_const =
-            calcul_zsomme_flux_const sv zpuit_oce ancien.zpuit_bio zB_ocean ancien.zT
+            calcul_zsomme_flux_const sv zpuit_oce previousState.zpuit_bio zB_ocean previousState.zT
 
         zsomme_C =
-            calcul_zsomme_C zpuit_oce ancien.zpuit_bio zC_alteration zC_stockage zB_ocean
+            calcul_zsomme_C zpuit_oce previousState.zpuit_bio zC_alteration zC_stockage zB_ocean
 
         zsomme_flux =
-            zsomme_flux_const + ancien.zCO2 * zsomme_C
+            zsomme_flux_const + previousState.zCO2 * zsomme_C
 
         emission_coo_ppm =
             calcul_emission_coo_ppm zsomme_flux
 
         zCO2 =
-            calcul_zCO2 ancien emission_coo_ppm dt
+            calcul_zCO2 previousState emission_coo_ppm dt
 
         zrapport_H2O =
-            calcul_rapport_H2O sv ancien.zT
+            calcul_rapport_H2O sv previousState.zT
 
         forcage_serre_eau =
             calcul_forcage_serre_H2O zrapport_H2O
@@ -405,47 +406,47 @@ calculsBoucleIter sv t iter ancien =
             calcul_zTeq fin g
 
         zT =
-            calcul_zT zTeq ancien.zT dt
+            calcul_zT zTeq previousState.zT dt
 
         oscillation =
-            calcul_oscillation sv iter ancien zT zCO2
+            calcul_oscillation sv iter previousState zT zCO2
     in
-    { ancien
-        | fdegaz = calcul_fdegaz sv ancien.zT
+    { previousState
+        | fdegaz = calcul_fdegaz sv previousState.zT
         , fin = fin
         , forcage_serre = forcage_serre
         , forcage_serre_CO2 = forcage_serre_CO2
         , forcage_serre_eau = forcage_serre_eau
         , g = g
-        , phieq = calcul_phieq sv ancien.zT
+        , phieq = calcul_phieq sv previousState.zT
         , tau_niveau_calottes = tau_niveau_calottes
         , zB_ocean = zB_ocean
         , zC_alteration = zC_alteration
         , zC_stockage = zC_stockage
         , zCO2 =
             if oscillation == 1 && not sv.fixed_concentration then
-                (zCO2 + ancien.zCO2 + 0.5 * ancien.zCO2_prec) / 2.5
+                (zCO2 + previousState.zCO2 + 0.5 * previousState.zCO2_prec) / 2.5
 
             else
                 zCO2
-        , zCO2_prec = ancien.zCO2
-        , zCO2eq_oce = calcul_zCO2eq_oce ancien.zT
+        , zCO2_prec = previousState.zCO2
+        , zCO2eq_oce = calcul_zCO2eq_oce previousState.zT
         , zT =
             if oscillation == 1 then
-                (zT + ancien.zT + 0.5 * ancien.zT_ancien) / 2.5
+                (zT + previousState.zT + 0.5 * previousState.zT_ancien) / 2.5
 
             else
                 zT
-        , zT_ancien = ancien.zT
+        , zT_ancien = previousState.zT
         , zTeq = zTeq
         , zalbedo = zalbedo
         , zphig =
             if oscillation == 1 then
-                (zphig + ancien.zphig + 0.5 * ancien.zphig_ancien) / 2.5
+                (zphig + previousState.zphig + 0.5 * previousState.zphig_ancien) / 2.5
 
             else
                 zphig
-        , zphig_ancien = ancien.zphig
+        , zphig_ancien = previousState.zphig
         , zpuit_oce = zpuit_oce
         , zrapport_H2O = zrapport_H2O
         , zsomme_C = zsomme_C
@@ -453,32 +454,32 @@ calculsBoucleIter sv t iter ancien =
     }
 
 
-calcul_oscillation : SimulationValues -> Int -> Ancien -> Float -> Float -> Int
-calcul_oscillation sv iter ancien zT zCO2 =
+calcul_oscillation : SimulationValues -> Int -> State -> Float -> Float -> Int
+calcul_oscillation sv iter previous zT zCO2 =
     let
         oscillation =
-            if (iter >= 3) && (ancien.oscillation == 0) then
+            if (iter >= 3) && (previous.oscillation == 0) then
                 -- pour éviter de détecter des oscillations à cause d'erreurs numériques
                 -- on rajoute marge de 1e-5
-                if ancien.zT < ancien.zT_ancien - 1.0e-5 then
-                    if zT > ancien.zT + 1.0e-5 then
+                if previous.zT < previous.zT_ancien - 1.0e-5 then
+                    if zT > previous.zT + 1.0e-5 then
                         1
 
                     else
-                        ancien.oscillation
+                        previous.oscillation
 
-                else if ancien.zT > ancien.zT_ancien + 1.0e-5 then
-                    if zT < ancien.zT - 1.0e-5 then
+                else if previous.zT > previous.zT_ancien + 1.0e-5 then
+                    if zT < previous.zT - 1.0e-5 then
                         1
 
                     else
-                        ancien.oscillation
+                        previous.oscillation
 
                 else
-                    ancien.oscillation
+                    previous.oscillation
 
             else
-                ancien.oscillation
+                previous.oscillation
     in
     if sv.fixed_concentration then
         oscillation
@@ -486,15 +487,15 @@ calcul_oscillation sv iter ancien zT zCO2 =
     else if (iter >= 3) && (oscillation == 0) then
         -- pour éviter de détecter des oscillations à cause d'erreurs numériques
         -- on rajoute marge de 1e-5
-        if ancien.zCO2 < ancien.zCO2_prec - 1.0e-5 then
-            if zCO2 > ancien.zCO2 + 1.0e-5 then
+        if previous.zCO2 < previous.zCO2_prec - 1.0e-5 then
+            if zCO2 > previous.zCO2 + 1.0e-5 then
                 1
 
             else
                 oscillation
 
-        else if ancien.zCO2 > ancien.zCO2_prec + 1.0e-5 then
-            if zCO2 < ancien.zCO2 - 1.0e-5 then
+        else if previous.zCO2 > previous.zCO2_prec + 1.0e-5 then
+            if zCO2 < previous.zCO2 - 1.0e-5 then
                 1
 
             else
@@ -596,10 +597,10 @@ calcul_rapport_H2O sv zT =
                 )
 
 
-calcul_zCO2 : Ancien -> Float -> Float -> Float
-calcul_zCO2 ancien emission_coo_ppm dt_ =
+calcul_zCO2 : State -> Float -> Float -> Float
+calcul_zCO2 previousState emission_coo_ppm dt_ =
     max 0 <|
-        ancien.zCO2
+        previousState.zCO2
             + emission_coo_ppm
             * dt_
 
@@ -735,9 +736,9 @@ calcul_zpuit_oce sv zT =
             |> min (PhysicsConstants.puit_oce_max / 100)
 
 
-calcul_zB_ocean : Ancien -> Float
-calcul_zB_ocean ancien =
-    calcul_zC_alteration ancien.b_ocean ancien.zphig
+calcul_zB_ocean : State -> Float
+calcul_zB_ocean previousState =
+    calcul_zC_alteration previousState.b_ocean previousState.zphig
 
 
 calcul_zC_alteration : Float -> Float -> Float
@@ -752,9 +753,9 @@ calcul_zC_alteration cmax zphig =
         0.0
 
 
-calcul_zphig : SimulationValues -> Ancien -> Float -> Float
-calcul_zphig sv ancien tau_niveau_calottes =
-    calculT (calcul_phieq sv ancien.zT) ancien.zphig tau_niveau_calottes dt
+calcul_zphig : SimulationValues -> State -> Float -> Float
+calcul_zphig sv previousState tau_niveau_calottes =
+    calculT (calcul_phieq sv previousState.zT) previousState.zphig tau_niveau_calottes dt
         |> max 0
         |> min 90
 

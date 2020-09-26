@@ -84,6 +84,12 @@ toSimClimat sv =
                 , pastData = []
                 }
           )
+        , ( "niveau_calottes_data"
+          , toSimClimatDataArray
+                { data = List.map .zphig sv.results
+                , pastData = []
+                }
+          )
         ]
 
 

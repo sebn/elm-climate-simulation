@@ -15,7 +15,7 @@ var elmTestWrapper = Elm.TestWrapper.init();
 // FIXME: Force same precision in SimClimat as in Elm
 Math.exp = x => Math.pow(Math.E, x);
 
-test('starting from pre-industrial state', async () => {
+test('pre-industrial', async () => {
     const sv = new CSimulationValues();
     sv.create_1750_state();
     // logSimulationValues(sv);
@@ -30,7 +30,7 @@ test('pre-industrial, fixed concentration', async () => {
     await assertSameResultsAsync(sv);
 });
 
-test('starting from now', async () => {
+test('actual', async () => {
     const sv = new CSimulationValues();
     sv.create_actual_state();
     sv.annee_debut = 2007.0;

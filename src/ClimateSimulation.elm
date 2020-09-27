@@ -364,11 +364,11 @@ computeNextIntermediateState sv t iter previousState =
         tau_niveau_calottes =
             calcul_tau_niveau_calottes sv t
 
-        zphig =
+        zphig_raw =
             calcul_zphig sv previousState tau_niveau_calottes
 
         zalbedo =
-            calcul_albedo sv zphig
+            calcul_albedo sv zphig_raw
 
         zC_alteration =
             calcul_zC_alteration previousState.alteration_max previousState.zphig
@@ -394,7 +394,7 @@ computeNextIntermediateState sv t iter previousState =
         emission_coo_ppm =
             calcul_emission_coo_ppm zsomme_flux
 
-        zCO2 =
+        zCO2_raw =
             calcul_zCO2 sv previousState emission_coo_ppm dt
 
         zrapport_H2O =
@@ -404,7 +404,7 @@ computeNextIntermediateState sv t iter previousState =
             calcul_forcage_serre_H2O zrapport_H2O
 
         forcage_serre_CO2 =
-            calcul_forcage_serre_CO2 zCO2
+            calcul_forcage_serre_CO2 zCO2_raw
 
         forcage_serre =
             forcage_serre_CO2 + forcage_serre_eau
@@ -418,11 +418,32 @@ computeNextIntermediateState sv t iter previousState =
         zTeq =
             calcul_zTeq fin g
 
-        zT =
+        zT_raw =
             calcul_zT zTeq previousState.zT dt
 
         oscillation =
-            calcul_oscillation sv iter previousState zT zCO2
+            calcul_oscillation sv iter previousState zT_raw zCO2_raw
+
+        zCO2 =
+            if oscillation == 1 && not sv.fixed_concentration then
+                (zCO2_raw + previousState.zCO2 + 0.5 * previousState.zCO2_prec) / 2.5
+
+            else
+                zCO2_raw
+
+        zT =
+            if oscillation == 1 then
+                (zT_raw + previousState.zT + 0.5 * previousState.zT_ancien) / 2.5
+
+            else
+                zT_raw
+
+        zphig =
+            if oscillation == 1 then
+                (zphig_raw + previousState.zphig + 0.5 * previousState.zphig_ancien) / 2.5
+
+            else
+                zphig_raw
     in
     { previousState
         | fdegaz = calcul_fdegaz sv previousState.zT
@@ -436,29 +457,14 @@ computeNextIntermediateState sv t iter previousState =
         , zB_ocean = zB_ocean
         , zC_alteration = zC_alteration
         , zC_stockage = zC_stockage
-        , zCO2 =
-            if oscillation == 1 && not sv.fixed_concentration then
-                (zCO2 + previousState.zCO2 + 0.5 * previousState.zCO2_prec) / 2.5
-
-            else
-                zCO2
+        , zCO2 = zCO2
         , zCO2_prec = previousState.zCO2
         , zCO2eq_oce = calcul_zCO2eq_oce previousState.zT
-        , zT =
-            if oscillation == 1 then
-                (zT + previousState.zT + 0.5 * previousState.zT_ancien) / 2.5
-
-            else
-                zT
+        , zT = zT
         , zT_ancien = previousState.zT
         , zTeq = zTeq
         , zalbedo = zalbedo
-        , zphig =
-            if oscillation == 1 then
-                (zphig + previousState.zphig + 0.5 * previousState.zphig_ancien) / 2.5
-
-            else
-                zphig
+        , zphig = zphig
         , zphig_ancien = previousState.zphig
         , zpuit_oce = zpuit_oce
         , zrapport_H2O = zrapport_H2O

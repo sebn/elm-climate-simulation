@@ -145,7 +145,7 @@ var normalizeSimulationValues = sv => {
         }
     }
     delete sv['niveau_mer_data'];
-    delete sv['albedo_data'];
+    // delete sv['albedo_data'];
     // delete sv['annee_debut'];
     delete sv['annee_fin'];
 

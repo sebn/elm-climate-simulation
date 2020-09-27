@@ -395,7 +395,7 @@ computeNextIntermediateState sv t iter previousState =
             calcul_emission_coo_ppm zsomme_flux
 
         zCO2 =
-            calcul_zCO2 previousState emission_coo_ppm dt
+            calcul_zCO2 sv previousState emission_coo_ppm dt
 
         zrapport_H2O =
             calcul_rapport_H2O sv previousState.zT
@@ -610,12 +610,16 @@ calcul_rapport_H2O sv zT =
                 )
 
 
-calcul_zCO2 : State -> Float -> Float -> Float
-calcul_zCO2 previousState emission_coo_ppm dt_ =
-    max 0 <|
-        previousState.zCO2
-            + emission_coo_ppm
-            * dt_
+calcul_zCO2 : SimulationValues -> State -> Float -> Float -> Float
+calcul_zCO2 sv previousState emission_coo_ppm dt_ =
+    if sv.fixed_concentration then
+        sv.coo_concentr_value
+
+    else
+        max 0 <|
+            previousState.zCO2
+                + emission_coo_ppm
+                * dt_
 
 
 {-| ppm/an

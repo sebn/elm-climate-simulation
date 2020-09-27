@@ -22,6 +22,14 @@ test('starting from pre-industrial state', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('pre-industrial, fixed concentration', async () => {
+    const sv = new CSimulationValues();
+    sv.create_1750_state();
+    sv.fixed_concentration = true;
+    sv.coo_concentr_value = 345;
+    await assertSameResultsAsync(sv);
+});
+
 test('starting from now', async () => {
     const sv = new CSimulationValues();
     sv.create_actual_state();

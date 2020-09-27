@@ -96,7 +96,14 @@ toSimClimat sv =
                 , pastData = []
                 }
           )
+        , ( "albedo_data"
+          , toSimClimatDataArray
+                { data = albedo_data sv
+                , pastData = []
+                }
+          )
         ]
+
 
 duplicateLast : List a -> List a
 duplicateLast items =
@@ -109,6 +116,11 @@ duplicateLast items =
 
         first :: rest ->
             first :: duplicateLast rest
+
+
+albedo_data : SimulationValues -> List Float
+albedo_data sv =
+    List.map (.zalbedo >> (*) 100) sv.results
 
 
 emissions_coo_data : SimulationValues -> List Float
@@ -314,7 +326,7 @@ boucleT sv =
             , zT = zT0
             , zT_ancien = zT0
             , zTeq = 0
-            , zalbedo = 0
+            , zalbedo = calcul_albedo sv zphig0
             , zphig = zphig0
             , zphig_ancien = zphig0
             , zpuit_bio = calcul_zpuit_bio sv

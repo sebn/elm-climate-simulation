@@ -90,7 +90,41 @@ toSimClimat sv =
                 , pastData = []
                 }
           )
+        , ( "emissions_coo_data"
+          , toSimClimatDataArray
+                { data = emissions_coo_data sv |> duplicateLast
+                , pastData = []
+                }
+          )
         ]
+
+duplicateLast : List a -> List a
+duplicateLast items =
+    case items of
+        [] ->
+            items
+
+        [ x ] ->
+            [ x, x ]
+
+        first :: rest ->
+            first :: duplicateLast rest
+
+
+emissions_coo_data : SimulationValues -> List Float
+emissions_coo_data sv =
+    List.map2 (calcul_emission_coo sv)
+        sv.results
+        (sv.results |> List.tail |> Maybe.withDefault [])
+
+
+calcul_emission_coo : SimulationValues -> State -> State -> Float
+calcul_emission_coo sv previousState state =
+    if sv.fixed_concentration then
+        0
+
+    else
+        (state.zCO2 - previousState.zCO2) / EV.temps_elem ev
 
 
 simulationValuesDecoder : JD.Decoder SimulationValues

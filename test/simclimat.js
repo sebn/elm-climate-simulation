@@ -38,6 +38,16 @@ test('actual', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, fixed concentration', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.fixed_concentration = true;
+    sv.coo_concentr_value = 345;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

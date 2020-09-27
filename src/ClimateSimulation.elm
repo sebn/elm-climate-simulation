@@ -498,6 +498,7 @@ computeNextIntermediateState sv t iter previousState =
         , forcage_serre_CO2 = forcage_serre_CO2
         , forcage_serre_eau = forcage_serre_eau
         , g = g
+        , oscillation = oscillation
         , phieq = calcul_phieq sv previousState.zT
         , tau_niveau_calottes = tau_niveau_calottes
         , zB_ocean = zB_ocean

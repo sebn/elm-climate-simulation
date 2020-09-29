@@ -104,6 +104,15 @@ test('actual, puit_bio_value=42', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, puit_oce_value=42', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.puit_oce_value = 42;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

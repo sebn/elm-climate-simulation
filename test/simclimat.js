@@ -67,6 +67,15 @@ test('actual, debranche biologie', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, fixed ocean', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.fixed_ocean = true;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 
@@ -143,8 +152,7 @@ var normalizeSimulationValues = sv => {
     delete sv['modelPhysicsConstants'];
     delete sv['modelVarsConstants'];
     if (sv['temperature_data']) {
-        // delete sv['temperature_data']['past_datas'];
-        // delete sv['temperature_data']['datas'];
+        // sv['temperature_data']['datas'].splice(3);
         if (sv['temperature_data']['datas'][0]) {
             delete sv['temperature_data']['datas'][0]['alteration_max'];
             delete sv['temperature_data']['datas'][0]['fin'];
@@ -175,6 +183,9 @@ var normalizeSimulationValues = sv => {
     }
     delete sv['niveau_mer_data'];
     // delete sv['albedo_data'];
+    // delete sv['emissions_coo_data'];
+    // delete sv['niveau_calottes_data'];
+    // delete sv['concentrations_coo_data'];
     // delete sv['annee_debut'];
     delete sv['annee_fin'];
 

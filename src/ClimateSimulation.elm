@@ -330,7 +330,7 @@ boucleT sv =
             , zphig = zphig0
             , zphig_ancien = zphig0
             , zpuit_bio = calcul_zpuit_bio sv
-            , zpuit_oce = 0
+            , zpuit_oce = calcul_zpuit_oce0 sv
             , zrapport_H2O = calcul_rapport_H2O sv zT0
             , zsomme_C = 0
             , zsomme_flux_const = 0
@@ -343,6 +343,15 @@ boucleT sv =
         |> NEList.reverse
         |> NEList.tail
         |> (::) initialState
+
+
+calcul_zpuit_oce0 : SimulationValues -> Float
+calcul_zpuit_oce0 sv =
+    if sv.fixed_concentration || sv.debranche_ocean then
+        0
+
+    else
+        sv.puit_oce_value / 100.0
 
 
 prependNextResult : SimulationValues -> Int -> NEList.Nonempty State -> NEList.Nonempty State
@@ -407,6 +416,16 @@ computeNextResult sv t previous =
 computeNextIntermediateState : SimulationValues -> Int -> Int -> State -> State
 computeNextIntermediateState sv t iter previousState =
     let
+        debug : String -> value -> value
+        debug msg =
+            -- if t == 1 && iter == 2 then
+            --     Debug.log msg
+            -- else
+            identity
+
+        _ =
+            debug "b_ocean" previousState.b_ocean
+
         tau_niveau_calottes =
             calcul_tau_niveau_calottes sv t
 
@@ -420,7 +439,8 @@ computeNextIntermediateState sv t iter previousState =
             calcul_zC_alteration previousState.alteration_max previousState.zphig
 
         zpuit_oce =
-            calcul_zpuit_oce sv previousState.zT
+            calcul_zpuit_oce sv previousState
+                |> debug "zpuit_oce"
 
         zC_stockage =
             calcul_zC_stockage sv previousState.zphig
@@ -492,7 +512,9 @@ computeNextIntermediateState sv t iter previousState =
                 zphig_raw
     in
     { previousState
-        | fdegaz = calcul_fdegaz sv previousState.zT
+        | fdegaz =
+            calcul_fdegaz sv previousState.zT
+                |> debug "fdegaz"
         , fin = fin
         , forcage_serre = forcage_serre
         , forcage_serre_CO2 = forcage_serre_CO2
@@ -791,10 +813,10 @@ calcul_zpuit_bio sv =
         sv.puit_bio_value / 100
 
 
-calcul_zpuit_oce : SimulationValues -> Float -> Float
-calcul_zpuit_oce sv zT =
-    if sv.debranche_ocean || sv.fixed_ocean then
-        0
+calcul_zpuit_oce : SimulationValues -> State -> Float
+calcul_zpuit_oce sv { zT, zpuit_oce } =
+    if sv.fixed_concentration || sv.debranche_ocean || sv.fixed_ocean then
+        zpuit_oce
 
     else
         ((zT - PhysicsConstants.tcrit_oce - PhysicsConstants.tKelvin)

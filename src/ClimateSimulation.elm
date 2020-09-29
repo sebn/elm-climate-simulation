@@ -392,19 +392,6 @@ calcul_zphig0 sv =
             PhysicsConstants.niveau_calottes_actuel
 
 
-zpuit_oce0 : SimulationValues -> Float
-zpuit_oce0 sv =
-    if sv.fixed_concentration then
-        -- undefined in SimClimat
-        0
-
-    else if sv.debranche_ocean then
-        0
-
-    else
-        sv.puit_oce_value / 100
-
-
 computeNextResult : SimulationValues -> Int -> State -> State
 computeNextResult sv t previous =
     List.range 1 niter

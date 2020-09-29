@@ -85,6 +85,16 @@ test('actual, debranche_ocean', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, fixed_albedo', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.fixed_albedo = true;
+    sv.albedo_value = 42;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

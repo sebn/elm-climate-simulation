@@ -25,6 +25,8 @@ type alias SimulationValues =
     , fixed_albedo : Bool
     , rapport_H2O_value : Float
     , puit_bio_value : Float
+
+    -- FIXME: Does puit_oce_value actually change anything?
     , puit_oce_value : Float
     , albedo_value : Float
     , coo_concentr_value : Float

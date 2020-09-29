@@ -122,6 +122,15 @@ test('actual, puissance_soleil_value=42', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, distance_ts_value', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.distance_ts_value = 1.56789e11;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

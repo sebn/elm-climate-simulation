@@ -58,6 +58,15 @@ test('actual, fixed eau', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, debranche biologie', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.debranche_biologie = true;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

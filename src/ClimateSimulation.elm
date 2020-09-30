@@ -760,19 +760,6 @@ calcul_fin sv zalbedo =
 
 calcul_albedo : SimulationValues -> Float -> Float
 calcul_albedo sv zphig =
-    -- if (this.simulationValues.fixed_albedo) {
-    --     zalbedo = this.simulationValues.albedo_value / 100.; // conversion albedo en % en albedo en unité
-    --     for (var t = 0; t <= this.experienceValues.indice_max(); t++) {
-    --         this.simulationValues.albedo_data.set(t, this.simulationValues.albedo_value);
-    --     }
-    -- }
-    -- else {
-    --     this.simulationValues.albedo_data.set(0, this.calcul_albedo(this.simulationValues.niveau_calottes_data.get(0)) * 100.);
-    -- }
-    -- ...
-    -- if (!this.simulationValues.fixed_albedo) {
-    --     CLogger.log('Method modelExecute: calcul_albedo: albedo_ter = ' + CPhysicsConstants.albedo_ter);
-    --     zalbedo = this.calcul_albedo(zphig);
     if sv.fixed_albedo then
         sv.albedo_value / 100
 
@@ -792,7 +779,6 @@ calcul_albedo sv zphig =
 calcul_zpuit_bio : SimulationValues -> Float
 calcul_zpuit_bio sv =
     if sv.fixed_concentration then
-        -- undefined in SimClimat
         0
 
     else if sv.debranche_biologie then
@@ -925,7 +911,6 @@ delta_angle sv =
 
 calcul_fin0 : SimulationValues -> Float
 calcul_fin0 sv =
-    -- Fin0 = CPhysicsConstants.puissance_recue_zero * (this.simulationValues.puissance_soleil_value / 100.) / (this.simulationValues.distance_ts_value / 100) / (this.simulationValues.distance_ts_value / 100);
     PhysicsConstants.puissance_recue_zero
         * (sv.puissance_soleil_value / 100.0)
         / (sv.distance_ts_value / 100)
@@ -940,10 +925,6 @@ dt =
 niter : Int
 niter =
     max 4 (truncate (3 * exp (0.3 * log (EV.temps_elem ev))))
-
-
-
---  Math.max(4, Math.trunc(3 * Math.exp(0.3 * Math.log(this.experienceValues.temps_elem()))));
 
 
 temperature_past_data : InitialState -> List Float

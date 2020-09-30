@@ -259,12 +259,6 @@ var logSimulationValues = sv => {
     return sv;
 }
 
-var normalizeSimulationValues = sv => {
-    sv = _.cloneDeep(sv);
-    // FIXME
-    // delete sv['modelVarsConstants'];
-
-    return sv;
-}
+var normalizeSimulationValues = _.identity;
 
 test.run();

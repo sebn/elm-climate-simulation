@@ -15,8 +15,10 @@ import List.Nonempty as NEList
 
 
 type alias SimulationValues =
-    { -- CONFIG
-      initialState : InitialState
+    { simulation_name : String
+
+    -- CONFIG
+    , initialState : InitialState
     , fixed_eau : Bool
     , fixed_concentration : Bool
     , debranche_biologie : Bool
@@ -53,7 +55,8 @@ fromSimClimat json =
 toSimClimat : SimulationValues -> JE.Value
 toSimClimat sv =
     JE.object
-        [ ( "annee_debut", JE.int (startYear sv.initialState) )
+        [ ( "simulation_name", JE.string sv.simulation_name )
+        , ( "annee_debut", JE.int (startYear sv.initialState) )
         , ( "fixed_eau", JE.bool sv.fixed_eau )
         , ( "fixed_concentration", JE.bool sv.fixed_concentration )
         , ( "debranche_biologie", JE.bool sv.debranche_biologie )
@@ -150,6 +153,7 @@ calcul_emission_coo sv previousState state =
 simulationValuesDecoder : JD.Decoder SimulationValues
 simulationValuesDecoder =
     JD.succeed SimulationValues
+        |> JDP.required "simulation_name" JD.string
         |> JDP.required "annee_debut" initialStateDecoder
         |> JDP.required "fixed_eau" JD.bool
         |> JDP.required "fixed_concentration" JD.bool
@@ -1043,26 +1047,4 @@ internEcheance =
 
 simulate : SimulationValues -> SimulationValues
 simulate config =
-    { initialState = config.initialState
-    , fixed_eau = config.fixed_eau
-    , fixed_concentration = config.fixed_concentration
-    , debranche_biologie = config.debranche_biologie
-    , fixed_ocean = config.fixed_ocean
-    , debranche_ocean = config.debranche_ocean
-    , fixed_albedo = config.fixed_albedo
-    , rapport_H2O_value = config.rapport_H2O_value
-    , puit_bio_value = config.puit_bio_value
-    , puit_oce_value = config.puit_oce_value
-    , albedo_value = config.albedo_value
-    , coo_concentr_value = config.coo_concentr_value
-    , puissance_soleil_value = config.puissance_soleil_value
-    , distance_ts_value = config.distance_ts_value
-    , obliquite_value = config.obliquite_value
-    , excentricite_value = config.excentricite_value
-    , precession_value = config.precession_value
-    , alteration_value = config.alteration_value
-    , emit_anthro_coo_value = config.emit_anthro_coo_value
-    , volcan_value = config.volcan_value
-    , stockage_biologique_value = config.stockage_biologique_value
-    , results = boucleT config
-    }
+    { config | results = boucleT config }

@@ -131,6 +131,15 @@ test('actual, distance_ts_value', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, obliquite_value', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.obliquite_value = 23.4;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

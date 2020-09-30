@@ -262,7 +262,7 @@ var logSimulationValues = sv => {
 var normalizeSimulationValues = sv => {
     sv = _.cloneDeep(sv);
     // FIXME
-    delete sv['modelVarsConstants'];
+    // delete sv['modelVarsConstants'];
 
     return sv;
 }

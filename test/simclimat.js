@@ -158,6 +158,15 @@ test('actual, precession_value', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, alteration_value', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.alteration_value = 123;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

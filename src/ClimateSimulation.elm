@@ -104,6 +104,12 @@ toSimClimat sv =
                 , pastData = []
                 }
           )
+        , ( "niveau_mer_data"
+          , toSimClimatDataArray
+                { data = niveau_mer_data sv
+                , pastData = []
+                }
+          )
         ]
 
 
@@ -297,46 +303,8 @@ type alias State =
 boucleT : SimulationValues -> List State
 boucleT sv =
     let
-        zT0 =
-            calcul_zT0 sv
-
-        zphig0 =
-            calcul_zphig0 sv
-
-        zCO2 =
-            sv.coo_concentr_value
-
         initialState =
-            { alteration_max = calcul_alteration_max sv
-            , b_ocean = calcul_b_ocean sv
-            , fdegaz = 0
-            , fin = calcul_fin0 sv
-            , forcage_serre = 0
-            , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
-            , forcage_serre_eau = 0
-            , g = 0
-            , insol65N = insol65N sv
-            , oscillation = 0
-            , phieq = calcul_phieq sv zT0
-            , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
-            , zB_ocean = 0
-            , zC_alteration = 0
-            , zC_stockage = 0
-            , zCO2 = zCO2
-            , zCO2_prec = zCO2
-            , zCO2eq_oce = 0
-            , zT = zT0
-            , zT_ancien = zT0
-            , zTeq = 0
-            , zalbedo = calcul_albedo sv zphig0
-            , zphig = zphig0
-            , zphig_ancien = zphig0
-            , zpuit_bio = calcul_zpuit_bio sv
-            , zpuit_oce = calcul_zpuit_oce0 sv
-            , zrapport_H2O = calcul_rapport_H2O sv zT0
-            , zsomme_C = 0
-            , zsomme_flux_const = 0
-            }
+            computeInitialState sv
     in
     List.range 1 n
         |> List.foldl
@@ -345,6 +313,50 @@ boucleT sv =
         |> NEList.reverse
         |> NEList.tail
         |> (::) initialState
+
+
+computeInitialState : SimulationValues -> State
+computeInitialState sv =
+    let
+        zT0 =
+            calcul_zT0 sv
+
+        zphig0 =
+            calcul_zphig0 sv
+
+        zCO2 =
+            sv.coo_concentr_value
+    in
+    { alteration_max = calcul_alteration_max sv
+    , b_ocean = calcul_b_ocean sv
+    , fdegaz = 0
+    , fin = calcul_fin0 sv
+    , forcage_serre = 0
+    , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
+    , forcage_serre_eau = 0
+    , g = 0
+    , insol65N = insol65N sv
+    , oscillation = 0
+    , phieq = calcul_phieq sv zT0
+    , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
+    , zB_ocean = 0
+    , zC_alteration = 0
+    , zC_stockage = 0
+    , zCO2 = zCO2
+    , zCO2_prec = zCO2
+    , zCO2eq_oce = 0
+    , zT = zT0
+    , zT_ancien = zT0
+    , zTeq = 0
+    , zalbedo = calcul_albedo sv zphig0
+    , zphig = zphig0
+    , zphig_ancien = zphig0
+    , zpuit_bio = calcul_zpuit_bio sv
+    , zpuit_oce = calcul_zpuit_oce0 sv
+    , zrapport_H2O = calcul_rapport_H2O sv zT0
+    , zsomme_C = 0
+    , zsomme_flux_const = 0
+    }
 
 
 calcul_zpuit_oce0 : SimulationValues -> Float
@@ -523,6 +535,80 @@ computeNextIntermediateState sv t iter previousState =
         , zsomme_C = zsomme_C
         , zsomme_flux_const = zsomme_flux_const
     }
+
+
+niveau_mer_data : SimulationValues -> List Float
+niveau_mer_data sv =
+    List.indexedMap (calcul_niveau_mer sv) sv.results
+
+
+calcul_niveau_mer : SimulationValues -> Int -> State -> Float
+calcul_niveau_mer sv t { zphig, zT } =
+    if t == 0 then
+        case sv.initialState of
+            PreIndustrial ->
+                PhysicsConstants.niveau_mer_1750
+
+            _ ->
+                0
+
+    else
+        let
+            -- tau_niveau_mer est en année, il faut diviser par temps_elem pour
+            -- l'avoir en nombre de pas.
+            --
+            -- index doit pouvoir être soit positif, soit négatif. On met juste
+            -- des bornes entre -100 et +100.
+            index =
+                (t - truncate (PhysicsConstants.tau_niveau_mer / EV.temps_elem ev))
+                    |> min (EV.indice_max ev)
+                    |> max -(EV.indice_max ev)
+
+            tressentie =
+                if index < 0 then
+                    let
+                        past_data =
+                            sv.initialState
+                                |> temperature_past_data
+                                |> List.drop index
+                                -- get_past(-index) ???
+                                |> List.head
+                                |> Maybe.withDefault 0
+                    in
+                    zT * 0.2 + past_data * 0.8
+
+                else
+                    let
+                        data =
+                            sv.results
+                                |> List.drop index
+                                |> List.head
+                                |> Maybe.andThen (Just << .zT)
+                                |> Maybe.withDefault 0
+                    in
+                    zT * 0.2 + data * 0.8
+
+            dilatation =
+                PhysicsConstants.dilat
+                    * 0.5
+                    * (tressentie
+                        - PhysicsConstants.tKelvin
+                        - PhysicsConstants.tressentie_act
+                      )
+
+            hmer =
+                PhysicsConstants.hmer_tot
+                    * (1 + dilatation)
+                    * (1
+                        - PhysicsConstants.fphig1
+                        * (zphig - PhysicsConstants.niveau_calottes_max)
+                        - PhysicsConstants.fphig2
+                        * ((zphig - PhysicsConstants.niveau_calottes_max) ^ 2)
+                        - PhysicsConstants.fphig3
+                        * ((zphig - PhysicsConstants.niveau_calottes_max) ^ 3)
+                      )
+        in
+        hmer - PhysicsConstants.hmeract
 
 
 calcul_oscillation : SimulationValues -> Int -> State -> Float -> Float -> Int

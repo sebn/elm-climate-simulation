@@ -269,37 +269,7 @@ var normalizeSimulationValues = sv => {
     delete sv['INTERN_ECHEANCE'];
     delete sv['modelPhysicsConstants'];
     delete sv['modelVarsConstants'];
-    if (sv['temperature_data']) {
-        // sv['temperature_data']['datas'].splice(3);
-        if (sv['temperature_data']['datas'][0]) {
-            delete sv['temperature_data']['datas'][0]['alteration_max'];
-            delete sv['temperature_data']['datas'][0]['fin'];
-            delete sv['temperature_data']['datas'][0]['forcage_serre'];
-            delete sv['temperature_data']['datas'][0]['forcage_serre_CO2'];
-            delete sv['temperature_data']['datas'][0]['forcage_serre_eau'];
-            delete sv['temperature_data']['datas'][0]['g'];
-            delete sv['temperature_data']['datas'][0]['oscillation'];
-            delete sv['temperature_data']['datas'][0]['phieq'];
-            delete sv['temperature_data']['datas'][0]['tau_niveau_calottes'];
-            delete sv['temperature_data']['datas'][0]['zB_ocean'];
-            delete sv['temperature_data']['datas'][0]['zC_alteration'];
-            delete sv['temperature_data']['datas'][0]['zC_stockage'];
-            delete sv['temperature_data']['datas'][0]['zT'];
-            delete sv['temperature_data']['datas'][0]['zTeq'];
-            delete sv['temperature_data']['datas'][0]['zalbedo'];
-            delete sv['temperature_data']['datas'][0]['zphig'];
-            delete sv['temperature_data']['datas'][0]['zphig_ancien'];
-            delete sv['temperature_data']['datas'][0]['zpuit_oce'];
-            delete sv['temperature_data']['datas'][0]['zrapport_H2O'];
-            delete sv['temperature_data']['datas'][0]['zsomme_C'];
-            delete sv['temperature_data']['datas'][0]['fdegaz'];
-            delete sv['temperature_data']['datas'][0]['zCO2'];
-            delete sv['temperature_data']['datas'][0]['zCO2_prec'];
-            delete sv['temperature_data']['datas'][0]['zCO2eq_oce'];
-            delete sv['temperature_data']['datas'][0]['zsomme_flux_const'];
-        }
-    }
-    delete sv['niveau_mer_data'];
+    // delete sv['niveau_mer_data'];
     // delete sv['albedo_data'];
     // delete sv['emissions_coo_data'];
     // delete sv['niveau_calottes_data'];

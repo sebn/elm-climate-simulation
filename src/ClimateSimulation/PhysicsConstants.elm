@@ -20,9 +20,15 @@ module ClimateSimulation.PhysicsConstants exposing
     , coo_Gt_act
     , dFdegaz
     , deltaT_last_century
+    , dilat
     , excentricite_actuel
+    , fphig1
+    , fphig2
+    , fphig3
     , g0
     , g_min
+    , hmer_tot
+    , hmeract
     , insol_actuel
     , lat_Mil
     , niveau_calotte_critique_coo
@@ -31,6 +37,7 @@ module ClimateSimulation.PhysicsConstants exposing
     , niveau_calottes_actuel
     , niveau_calottes_max
     , niveau_calottes_min
+    , niveau_mer_1750
     , obliquite_actuel
     , phig_crit
     , pi
@@ -45,11 +52,13 @@ module ClimateSimulation.PhysicsConstants exposing
     , tKelvin
     , tau_niveau_calottes_deglacement
     , tau_niveau_calottes_englacement
+    , tau_niveau_mer
     , tau_temperature
     , tcrit_oce
     , temperature_1750
     , temperature_LGM
     , temperature_actuelle
+    , tressentie_act
     , volcanisme_actuel
     )
 
@@ -148,9 +157,36 @@ delta_angle_actuel =
         * pi
 
 
+{-| en °C
+-}
+dilat : Float
+dilat =
+    2.4e-4
+
+
+dilatation_1750 : Float
+dilatation_1750 =
+    dilat * 0.5 * (temperature_1750 - tressentie_act)
+
+
 excentricite_actuel : Float
 excentricite_actuel =
     0.0167
+
+
+fphig1 : Float
+fphig1 =
+    (niveau_mer_1750_target / hmer_tot - optim1) / optim2
+
+
+fphig2 : Float
+fphig2 =
+    1.0e-5
+
+
+fphig3 : Float
+fphig3 =
+    -1.99447e-7
 
 
 g0 : Float
@@ -166,6 +202,26 @@ g0 =
 g_min : Float
 g_min =
     1.0e-4
+
+
+{-| en m
+-}
+hmer_tot : Float
+hmer_tot =
+    3.8e3
+
+
+hmeract : Float
+hmeract =
+    hmer_tot
+        * (1
+            - fphig1
+            * (niveau_calottes_actuel - niveau_calottes_max)
+            - fphig2
+            * ((niveau_calottes_actuel - niveau_calottes_max) ^ 2)
+            - fphig3
+            * ((niveau_calottes_actuel - niveau_calottes_max) ^ 3)
+          )
 
 
 insol_actuel : Float
@@ -214,9 +270,52 @@ niveau_calottes_min =
     0
 
 
+niveau_mer_1750_target : Float
+niveau_mer_1750_target =
+    -0.2
+
+
+niveau_mer_1750 : Float
+niveau_mer_1750 =
+    hmer_tot
+        * (1
+            + (dilat * 0.5 * (temperature_1750 - tressentie_act))
+          )
+        * (1
+            - (fphig1 * (niveau_calottes_1750 - niveau_calottes_max))
+            - (fphig2 * ((niveau_calottes_1750 - niveau_calottes_max) ^ 2))
+            - (fphig3 * ((niveau_calottes_1750 - niveau_calottes_max) ^ 3))
+          )
+        - hmeract
+
+
 obliquite_actuel : Float
 obliquite_actuel =
     23.5
+
+
+optim1 : Float
+optim1 =
+    (1 + dilatation_1750)
+        * (1
+            - fphig2
+            * ((niveau_calottes_1750 - niveau_calottes_max) ^ 2)
+            - fphig3
+            * ((niveau_calottes_1750 - niveau_calottes_max) ^ 3)
+          )
+        - (1
+            - fphig2
+            * ((niveau_calottes_actuel - niveau_calottes_max) ^ 2)
+            - fphig3
+            * ((niveau_calottes_actuel - niveau_calottes_max) ^ 3)
+          )
+
+
+optim2 : Float
+optim2 =
+    (niveau_calottes_actuel - niveau_calottes_max)
+        - (1 + dilatation_1750)
+        * (niveau_calottes_1750 - niveau_calottes_max)
 
 
 phig_crit : Float
@@ -246,6 +345,14 @@ precession_actuel =
 puissance_recue_zero : Float
 puissance_recue_zero =
     1370 / 4
+
+
+{-| `tau_niveau_mer` ne peut dépasser 100 ans car c'est la mémoire maximale
+d'une simul pour la simul précédente.
+-}
+tau_niveau_mer : Float
+tau_niveau_mer =
+    100
 
 
 {-| en années
@@ -368,6 +475,13 @@ tau_niveau_calottes_englacement : Float
 tau_niveau_calottes_englacement =
     -- FIXME: same as tau_niveau_calottes_deglacement? why?
     4000
+
+
+{-| `tressentie_act` doit correspondre au calcul dans `calcul_niveau_mer`
+-}
+tressentie_act : Float
+tressentie_act =
+    temperature_actuelle - 0.8 * deltaT_last_century
 
 
 {-| en Gt/an

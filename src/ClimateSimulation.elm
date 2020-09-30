@@ -412,9 +412,6 @@ computeNextIntermediateState sv t iter previousState =
             -- else
             identity
 
-        _ =
-            debug "b_ocean" previousState.b_ocean
-
         tau_niveau_calottes =
             calcul_tau_niveau_calottes sv t
 
@@ -429,7 +426,6 @@ computeNextIntermediateState sv t iter previousState =
 
         zpuit_oce =
             calcul_zpuit_oce sv previousState
-                |> debug "zpuit_oce"
 
         zC_stockage =
             calcul_zC_stockage sv previousState.zphig
@@ -501,9 +497,7 @@ computeNextIntermediateState sv t iter previousState =
                 zphig_raw
     in
     { previousState
-        | fdegaz =
-            calcul_fdegaz sv previousState.zT
-                |> debug "fdegaz"
+        | fdegaz = calcul_fdegaz sv previousState.zT
         , fin = fin
         , forcage_serre = forcage_serre
         , forcage_serre_CO2 = forcage_serre_CO2

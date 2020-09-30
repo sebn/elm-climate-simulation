@@ -56,7 +56,12 @@ toSimClimat : SimulationValues -> JE.Value
 toSimClimat sv =
     JE.object
         [ ( "simulation_name", JE.string sv.simulation_name )
+        , ( "ID_MIN", JE.int 0 )
+        , ( "ID_MAX", JE.int n )
+        , ( "TEMPS_ELEM", JE.int 1 )
+        , ( "INTERN_ECHEANCE", JE.int 100 )
         , ( "annee_debut", JE.int (startYear sv.initialState) )
+        , ( "annee_fin", JE.int (endYear sv.initialState) )
         , ( "fixed_eau", JE.bool sv.fixed_eau )
         , ( "fixed_concentration", JE.bool sv.fixed_concentration )
         , ( "debranche_biologie", JE.bool sv.debranche_biologie )
@@ -114,6 +119,11 @@ toSimClimat sv =
                 }
           )
         ]
+
+
+endYear : InitialState -> Int
+endYear initialState =
+    startYear initialState + EV.echeance ev
 
 
 duplicateLast : List a -> List a

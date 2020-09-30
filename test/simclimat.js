@@ -262,13 +262,8 @@ var logSimulationValues = sv => {
 var normalizeSimulationValues = sv => {
     sv = _.cloneDeep(sv);
     // FIXME
-    delete sv['ID_MIN'];
-    delete sv['ID_MAX'];
-    delete sv['TEMPS_ELEM'];
-    delete sv['INTERN_ECHEANCE'];
     delete sv['modelPhysicsConstants'];
     delete sv['modelVarsConstants'];
-    delete sv['annee_fin'];
 
     return sv;
 }

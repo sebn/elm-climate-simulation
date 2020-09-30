@@ -58,11 +58,46 @@ module ClimateSimulation.PhysicsConstants exposing
     , temperature_1750
     , temperature_LGM
     , temperature_actuelle
+    , toSimClimat
     , tressentie_act
     , volcanisme_actuel
     )
 
 import ClimateSimulation.Math exposing (exp, log)
+import Json.Encode as JE
+
+
+toSimClimat : JE.Value
+toSimClimat =
+    JE.object
+        [ ( "t_res_coo_actuel", JE.float t_res_coo_actuel )
+        , ( "t_res_coo_90", JE.float t_res_coo_90 )
+        , ( "t_res_coo_critique", JE.float t_res_coo_critique )
+        , ( "temperature_1900", JE.float temperature_1900 )
+        , ( "G0", JE.float g0 )
+        , ( "T_ressentie_actuelle", JE.float t_ressentie_actuelle )
+        , ( "a_calottes", JE.float a_calottes )
+        , ( "b_calottes", JE.float b_calottes )
+        , ( "niveau_calottes_actuel", JE.float niveau_calottes_actuel )
+        , ( "Tressentie_act", JE.float tressentie_act )
+        , ( "dilatation_1750", JE.float dilatation_1750 )
+        , ( "optim1", JE.float optim1 )
+        , ( "optim2", JE.float optim2 )
+        , ( "fphig1", JE.float fphig1 )
+        , ( "Hmeract", JE.float hmeract )
+        , ( "niveau_mer_1750", JE.float niveau_mer_1750 )
+        , ( "C_alteration_naturel", JE.float c_alteration_naturel )
+        , ( "deltaT_poce", JE.float deltaT_poce )
+        , ( "a_H2O", JE.float a_H2O )
+        , ( "Tlim_bio_froid", JE.float tlim_bio_froid )
+        , ( "delta_angle_actuel", JE.float delta_angle_actuel )
+        , ( "insol_actuel", JE.float insol_actuel )
+        , ( "albedo_crit", JE.float albedo_crit )
+        , ( "albedo_actuel", JE.float albedo_actuel )
+        , ( "stockage_max", JE.float stockage_max )
+        , ( "concentration_coo_carbonifere", JE.float concentration_coo_carbonifere )
+        , ( "stockage_carbonifere", JE.float stockage_carbonifere )
+        ]
 
 
 a_H2O : Float
@@ -86,6 +121,11 @@ a_coo =
     1.8e-2
 
 
+a_oce : Float
+a_oce =
+    3.0e-2
+
+
 a_rankine : Float
 a_rankine =
     13.7
@@ -94,6 +134,14 @@ a_rankine =
 albedo_1750 : Float
 albedo_1750 =
     0.33
+
+
+albedo_actuel : Float
+albedo_actuel =
+    albedo_crit
+        + (niveau_calottes_actuel - phig_crit)
+        / (niveau_calottes_max - phig_crit)
+        * (albedo_ter - albedo_crit)
 
 
 albedo_crit : Float
@@ -172,6 +220,20 @@ dilatation_1750 =
 excentricite_actuel : Float
 excentricite_actuel =
     0.0167
+
+
+{-| GT/an-1
+-}
+flux_co2_stockage_max : Float
+flux_co2_stockage_max =
+    -10
+
+
+{-| en Gt par an d'apres R.A. Berner et D.E. Canfield (1989)
+-}
+flux_co2_stockage_carbonifere : Float
+flux_co2_stockage_carbonifere =
+    -0.396
 
 
 fphig1 : Float
@@ -318,6 +380,30 @@ optim2 =
         * (niveau_calottes_1750 - niveau_calottes_max)
 
 
+
+-- Facteur de pondération de la température il y a [[deltat0]] ans
+
+
+p0 : Float
+p0 =
+    1
+
+
+p1 : Float
+p1 =
+    5
+
+
+p2 : Float
+p2 =
+    3
+
+
+p3 : Float
+p3 =
+    1
+
+
 phig_crit : Float
 phig_crit =
     30
@@ -372,6 +458,13 @@ temperature_1750 =
     14.4
 
 
+{-| en °C ; necessaire dans modele\_reset
+-}
+temperature_1900 : Float
+temperature_1900 =
+    temperature_actuelle - deltaT_last_century
+
+
 temperature_LGM : Float
 temperature_LGM =
     10
@@ -382,11 +475,21 @@ temperature_actuelle =
     15.3
 
 
+temperature_froid : Float
+temperature_froid =
+    262
+
+
 {-| ppm
 -}
 concentration_coo_actuel : Float
 concentration_coo_actuel =
     405
+
+
+concentration_coo_carbonifere : Float
+concentration_coo_carbonifere =
+    concentration_coo_1750 * 2
 
 
 {-| ppm
@@ -422,9 +525,38 @@ dFdegaz =
     0.05
 
 
+
+-- Retard en temps en année
+
+
+deltat0 : Float
+deltat0 =
+    0
+
+
+deltat1 : Float
+deltat1 =
+    5
+
+
+deltat2 : Float
+deltat2 =
+    20
+
+
+deltat3 : Float
+deltat3 =
+    50
+
+
 deltaT_last_century : Float
 deltaT_last_century =
     0.8
+
+
+deltaT_poce : Float
+deltaT_poce =
+    0.5 / a_oce
 
 
 {-| en pourcent
@@ -460,9 +592,42 @@ sigma =
     5.67e-8
 
 
+stockage_carbonifere : Float
+stockage_carbonifere =
+    flux_co2_stockage_carbonifere / concentration_coo_carbonifere
+
+
+stockage_max : Float
+stockage_max =
+    flux_co2_stockage_max / concentration_coo_1750
+
+
 tKelvin : Float
 tKelvin =
     273.0
+
+
+t_ressentie_actuelle : Float
+t_ressentie_actuelle =
+    (1 / (p0 + p1 + p2 + p3))
+        * (p0
+            * temperature_actuelle
+            + p1
+            * temperature_actuelle
+            - deltaT_last_century
+            / 100
+            * deltat1
+            + p2
+            * temperature_actuelle
+            - deltaT_last_century
+            / 100
+            * deltat2
+            + p3
+            * temperature_actuelle
+            - deltaT_last_century
+            / 100
+            * deltat3
+          )
 
 
 tau_niveau_calottes_deglacement : Float
@@ -475,6 +640,30 @@ tau_niveau_calottes_englacement : Float
 tau_niveau_calottes_englacement =
     -- FIXME: same as tau_niveau_calottes_deglacement? why?
     4000
+
+
+t_res_coo_90 : Float
+t_res_coo_90 =
+    t_res_coo_actuel * 0.9
+
+
+t_res_coo_actuel : Float
+t_res_coo_actuel =
+    280 / 0.083 / (concentration_coo_actuel / coo_Gt_act)
+
+
+t_res_coo_critique : Float
+t_res_coo_critique =
+    t_res_coo_90
+        + ((90 - niveau_calotte_critique_coo)
+            * -(t_res_coo_90 - t_res_coo_actuel)
+            / (90 - niveau_calottes_1750)
+          )
+
+
+tlim_bio_froid : Float
+tlim_bio_froid =
+    temperature_froid
 
 
 {-| `tressentie_act` doit correspondre au calcul dans `calcul_niveau_mer`

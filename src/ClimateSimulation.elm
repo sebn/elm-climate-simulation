@@ -118,6 +118,7 @@ toSimClimat sv =
                 , pastData = []
                 }
           )
+        , ( "modelPhysicsConstants", PhysicsConstants.toSimClimat )
         ]
 
 

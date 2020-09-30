@@ -176,6 +176,15 @@ test('actual, emit_anthro_coo_value', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('actual, volcan_value', async () => {
+    const sv = new CSimulationValues();
+    sv.create_actual_state();
+    sv.annee_debut = 2007.0;
+    sv.volcan_value = 0.085;
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv);
+});
+
 var assertSameResultsAsync = async sv => {
     const elmResult = await runElmClimateAsync(sv);
 

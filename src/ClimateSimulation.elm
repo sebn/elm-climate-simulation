@@ -1,7 +1,10 @@
 module ClimateSimulation exposing
-    ( SimulationValues
+    ( InitialState(..)
+    , SimulationValues
+    , State
     , fromSimClimat
     , simulate
+    , startYear
     , toSimClimat
     )
 
@@ -238,7 +241,7 @@ toSimClimatDataArray { data, pastData } =
         [ ( "N", JE.int n )
         , ( "datas", JE.list JE.float data )
         , ( "past_datas", JE.list JE.float pastData )
-        , ( "resolution", JE.int n )
+        , ( "resolution", JE.int 5 )
         , ( "indice_min", JE.int 0 )
         , ( "indice_max", JE.int n )
         , ( "imin", JE.int 0 )
@@ -299,6 +302,7 @@ type alias State =
     , insol65N : Float
     , oscillation : Int
     , phieq : Float
+    , t : Int
     , tau_niveau_calottes : Float
     , zB_ocean : Float
     , zC_alteration : Float
@@ -358,6 +362,7 @@ computeInitialState sv =
     , insol65N = insol65N sv
     , oscillation = 0
     , phieq = calcul_phieq sv zT0
+    , t = 0
     , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
     , zB_ocean = 0
     , zC_alteration = 0
@@ -402,7 +407,7 @@ prependNextResult sv t previousStates =
 
 ev : ExperienceValues
 ev =
-    EV.fromEcheance 10000
+    EV.fromEcheance 500
 
 
 calcul_zT0 : SimulationValues -> Float
@@ -431,7 +436,7 @@ computeNextResult sv t previous =
     List.range 1 niter
         |> List.foldl
             (computeNextIntermediateState sv t)
-            { previous | oscillation = 0 }
+            { previous | t = t, oscillation = 0 }
 
 
 computeNextIntermediateState : SimulationValues -> Int -> Int -> State -> State

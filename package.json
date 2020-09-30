@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "elm make --output=test/elm.js test/TestWrapper.elm",
+    "start": "elm reactor",
     "test": "node test/simclimat"
   },
   "devDependencies": {

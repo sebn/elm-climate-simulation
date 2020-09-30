@@ -236,7 +236,7 @@ var runElmClimateAsync = sv =>
     });
 
 var runSimClimat = sv => {
-    const years /*: numbers */ = 10000;
+    const years /*: numbers */ = 500;
     // const sv /*: CSimulationValues */ = new CSimulationValues();
     const ev /*: CExperienceValues */ = new CExperienceValues(years);
     const m /*: CModel */ = new CModel();

@@ -527,11 +527,7 @@ dFdegaz =
 
 
 -- Retard en temps en année
-
-
-deltat0 : Float
-deltat0 =
-    0
+-- deltat0 =  0
 
 
 deltat1 : Float

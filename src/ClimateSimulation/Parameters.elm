@@ -1,15 +1,21 @@
 module ClimateSimulation.Parameters exposing
     ( Parameters
+    , alteration_max
+    , b_ocean
+    , fin0
+    , insol65N
     , niveau_mer0
     , simClimatDecoder
     , temperature_past_data
     , toSimClimatFields
     , zT0
     , zphig0
+    , zpuit_bio
     , zpuit_oce0
     )
 
 import ClimateSimulation.Duration as Duration exposing (Duration)
+import ClimateSimulation.Math exposing (exp, log)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
@@ -164,6 +170,76 @@ zpuit_oce0 parameters =
 endYear : Parameters -> Int
 endYear { initialState, duration } =
     startYear initialState + Duration.intoYears duration
+
+
+alteration_max : Parameters -> Float
+alteration_max parameters =
+    PhysicsConstants.c_alteration_naturel * (parameters.alteration_value / 100.0)
+
+
+b_ocean : Parameters -> Float
+b_ocean parameters =
+    if parameters.debranche_ocean then
+        0
+
+    else if parameters.fixed_ocean then
+        0
+
+    else
+        PhysicsConstants.b_ocean
+
+
+{-| Insolation 65º lat. N
+-}
+insol65N : Parameters -> Float
+insol65N parameters =
+    fin0 parameters
+        * cos (delta_angle parameters)
+        * exp
+            (2
+                * log
+                    ((1
+                        - PhysicsConstants.excentricite_actuel
+                        * 0.5
+                        * sin (-PhysicsConstants.precession_actuel / 180 * pi)
+                     )
+                        / (1
+                            - (0.3 * parameters.excentricite_value + 0.7 * PhysicsConstants.excentricite_actuel)
+                            * 0.5
+                            * sin (-parameters.precession_value / 180 * pi)
+                          )
+                    )
+            )
+
+
+delta_angle : Parameters -> Float
+delta_angle parameters =
+    abs
+        ((toFloat PhysicsConstants.lat_Mil - parameters.obliquite_value)
+            / 360
+            * 2
+            * PhysicsConstants.pi
+        )
+
+
+fin0 : Parameters -> Float
+fin0 parameters =
+    PhysicsConstants.puissance_recue_zero
+        * (parameters.puissance_soleil_value / 100.0)
+        / (parameters.distance_ts_value / 100)
+        / (parameters.distance_ts_value / 100)
+
+
+zpuit_bio : Parameters -> Float
+zpuit_bio parameters =
+    if parameters.fixed_concentration then
+        0
+
+    else if parameters.debranche_biologie then
+        0
+
+    else
+        parameters.puit_bio_value / 100
 
 
 simClimatDecoder : JD.Decoder Parameters

@@ -167,6 +167,9 @@ boucleT sv =
 computeInitialState : ClimateSimulation -> State
 computeInitialState sv =
     let
+        parameters =
+            sv.parameters
+
         zT0 =
             Parameters.zT0 sv.parameters
 
@@ -177,15 +180,15 @@ computeInitialState sv =
             sv.parameters.coo_concentr_value
     in
     State
-        { alteration_max = calcul_alteration_max sv
-        , b_ocean = calcul_b_ocean sv
+        { alteration_max = Parameters.alteration_max parameters
+        , b_ocean = Parameters.b_ocean parameters
         , fdegaz = 0
-        , fin = calcul_fin0 sv
+        , fin = Parameters.fin0 parameters
         , forcage_serre = 0
         , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
         , forcage_serre_eau = 0
         , g = 0
-        , insol65N = insol65N sv
+        , insol65N = Parameters.insol65N parameters
         , oscillation = 0
         , phieq = calcul_phieq sv zT0
         , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
@@ -201,8 +204,8 @@ computeInitialState sv =
         , zalbedo = calcul_albedo sv zphig0
         , zphig = zphig0
         , zphig_ancien = zphig0
-        , zpuit_bio = calcul_zpuit_bio sv
-        , zpuit_oce = Parameters.zpuit_oce0 sv.parameters
+        , zpuit_bio = Parameters.zpuit_bio parameters
+        , zpuit_oce = Parameters.zpuit_oce0 parameters
         , zrapport_H2O = calcul_rapport_H2O sv zT0
         , zsomme_C = 0
         , zsomme_flux_const = 0
@@ -651,7 +654,7 @@ calcul_zC_stockage sv zphig_ancien =
 
 calcul_fin : ClimateSimulation -> Float -> Float
 calcul_fin sv zalbedo =
-    calcul_fin0 sv * (1 - zalbedo)
+    Parameters.fin0 sv.parameters * (1 - zalbedo)
 
 
 calcul_albedo : ClimateSimulation -> Float -> Float
@@ -670,18 +673,6 @@ calcul_albedo sv zphig =
             + (zphig - PhysicsConstants.niveau_calottes_min)
             / (PhysicsConstants.phig_crit - PhysicsConstants.niveau_calottes_min)
             * (PhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
-
-
-calcul_zpuit_bio : ClimateSimulation -> Float
-calcul_zpuit_bio sv =
-    if sv.parameters.fixed_concentration then
-        0
-
-    else if sv.parameters.debranche_biologie then
-        0
-
-    else
-        sv.parameters.puit_bio_value / 100
 
 
 calcul_zpuit_oce : ClimateSimulation -> State -> Float
@@ -747,70 +738,12 @@ calcul_phieq sv zT =
         * (zT - PhysicsConstants.tKelvin)
         + PhysicsConstants.b_calottes
         + PhysicsConstants.c_calottes
-        * (insol65N sv
+        * (Parameters.insol65N sv.parameters
             - PhysicsConstants.insol_actuel
           )
     )
         |> min PhysicsConstants.niveau_calottes_max
         |> max PhysicsConstants.niveau_calottes_min
-
-
-calcul_alteration_max : ClimateSimulation -> Float
-calcul_alteration_max sv =
-    PhysicsConstants.c_alteration_naturel * (sv.parameters.alteration_value / 100.0)
-
-
-calcul_b_ocean : ClimateSimulation -> Float
-calcul_b_ocean sv =
-    if sv.parameters.debranche_ocean then
-        0
-
-    else if sv.parameters.fixed_ocean then
-        0
-
-    else
-        PhysicsConstants.b_ocean
-
-
-{-| Insolation 65º lat. N
--}
-insol65N : ClimateSimulation -> Float
-insol65N sv =
-    calcul_fin0 sv
-        * cos (delta_angle sv)
-        * exp
-            (2
-                * log
-                    ((1
-                        - PhysicsConstants.excentricite_actuel
-                        * 0.5
-                        * sin (-PhysicsConstants.precession_actuel / 180 * pi)
-                     )
-                        / (1
-                            - (0.3 * sv.parameters.excentricite_value + 0.7 * PhysicsConstants.excentricite_actuel)
-                            * 0.5
-                            * sin (-sv.parameters.precession_value / 180 * pi)
-                          )
-                    )
-            )
-
-
-delta_angle : ClimateSimulation -> Float
-delta_angle sv =
-    abs
-        ((toFloat PhysicsConstants.lat_Mil - sv.parameters.obliquite_value)
-            / 360
-            * 2
-            * PhysicsConstants.pi
-        )
-
-
-calcul_fin0 : ClimateSimulation -> Float
-calcul_fin0 sv =
-    PhysicsConstants.puissance_recue_zero
-        * (sv.parameters.puissance_soleil_value / 100.0)
-        / (sv.parameters.distance_ts_value / 100)
-        / (sv.parameters.distance_ts_value / 100)
 
 
 dt : Float

@@ -137,13 +137,6 @@ next parameters t (State previous) =
 nextIntermediate : Parameters -> Int -> Int -> State -> State
 nextIntermediate parameters t iter (State previous) =
     let
-        debug : String -> value -> value
-        debug msg =
-            -- if t == 1 && iter == 2 then
-            --     Debug.log msg
-            -- else
-            identity
-
         phieq =
             calcul_phieq parameters previous.zT
 

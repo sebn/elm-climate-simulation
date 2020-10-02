@@ -85,6 +85,9 @@ initial parameters =
 
         zCO2 =
             parameters.coo_concentr_value
+
+        phieq0 =
+            calcul_phieq parameters zT0
     in
     State
         { alteration_max = Parameters.alteration_max parameters
@@ -97,8 +100,8 @@ initial parameters =
         , g = 0
         , insol65N = Parameters.insol65N parameters
         , oscillation = 0
-        , phieq = calcul_phieq parameters zT0
-        , tau_niveau_calottes = calcul_tau_niveau_calottes parameters 0
+        , phieq = phieq0
+        , tau_niveau_calottes = calcul_tau_niveau_calottes phieq0 zphig0
         , zB_ocean = 0
         , zC_alteration = 0
         , zC_stockage = 0
@@ -141,8 +144,11 @@ nextIntermediate parameters t iter (State previous) =
             -- else
             identity
 
+        phieq =
+            calcul_phieq parameters previous.zT
+
         tau_niveau_calottes =
-            calcul_tau_niveau_calottes parameters t
+            calcul_tau_niveau_calottes phieq previous.zphig
 
         zphig_raw =
             calcul_zphig parameters (State previous) tau_niveau_calottes
@@ -234,7 +240,7 @@ nextIntermediate parameters t iter (State previous) =
             , forcage_serre_eau = forcage_serre_eau
             , g = g
             , oscillation = oscillation
-            , phieq = calcul_phieq parameters previous.zT
+            , phieq = phieq
             , tau_niveau_calottes = tau_niveau_calottes
             , zB_ocean = zB_ocean
             , zC_alteration = zC_alteration
@@ -544,17 +550,13 @@ calculT tEq tPrec tau dt_ =
     tPrec + (tEq - tPrec) * (1 - exp (-dt_ / tau))
 
 
-calcul_tau_niveau_calottes : Parameters -> Int -> Float
-calcul_tau_niveau_calottes parameters t =
-    -- let
-    --     -- FIXME
-    --     zphig_ancien =
-    --         50.0
-    -- in
-    -- if zphig_ancien < calcul_phieq parameters t then
-    --     PhysicsConstants.tau_niveau_calottes_deglacement
-    -- else
-    PhysicsConstants.tau_niveau_calottes_englacement
+calcul_tau_niveau_calottes : Float -> Float -> Float
+calcul_tau_niveau_calottes phieq zphig_ancien =
+    if zphig_ancien < phieq then
+        PhysicsConstants.tau_niveau_calottes_deglacement
+
+    else
+        PhysicsConstants.tau_niveau_calottes_englacement
 
 
 calcul_phieq : Parameters -> Float -> Float

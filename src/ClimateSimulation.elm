@@ -5,7 +5,7 @@ module ClimateSimulation exposing
     , toSimClimat
     )
 
-import ClimateSimulation.ExperienceValues as EV exposing (ExperienceValues)
+import ClimateSimulation.Duration as Duration exposing (Duration)
 import ClimateSimulation.Math exposing (exp, log)
 import ClimateSimulation.Parameters as Parameters exposing (Parameters)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
@@ -119,7 +119,7 @@ calcul_emission_coo sv previousState state =
         (State.co2Concentration state
             - State.co2Concentration previousState
         )
-            / EV.temps_elem ev
+            / Duration.temps_elem sv.parameters.duration
 
 
 simulationValuesDecoder : JD.Decoder SimulationValues
@@ -221,9 +221,9 @@ prependNextResult sv t previousStates =
     NEList.cons nextState previousStates
 
 
-ev : ExperienceValues
+ev : Duration
 ev =
-    EV.fromEcheance 10000
+    Duration.fromYears 10000
 
 
 computeNextResult : SimulationValues -> Int -> State -> State
@@ -376,9 +376,9 @@ calcul_niveau_mer sv t (State { zphig, zT }) =
             -- index doit pouvoir être soit positif, soit négatif. On met juste
             -- des bornes entre -100 et +100.
             index =
-                (t - truncate (PhysicsConstants.tau_niveau_mer / EV.temps_elem ev))
-                    |> min (EV.indice_max ev)
-                    |> max -(EV.indice_max ev)
+                (t - truncate (PhysicsConstants.tau_niveau_mer / Duration.temps_elem sv.parameters.duration))
+                    |> min (Duration.indice_max sv.parameters.duration)
+                    |> max -(Duration.indice_max sv.parameters.duration)
 
             tressentie =
                 if index < 0 then
@@ -815,12 +815,12 @@ calcul_fin0 sv =
 
 dt : Float
 dt =
-    EV.temps_elem ev / toFloat niter
+    Duration.temps_elem ev / toFloat niter
 
 
 niter : Int
 niter =
-    max 4 (truncate (3 * exp (0.3 * log (EV.temps_elem ev))))
+    max 4 (truncate (3 * exp (0.3 * log (Duration.temps_elem ev))))
 
 
 simulate : SimulationValues -> SimulationValues

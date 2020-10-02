@@ -9,7 +9,7 @@ module ClimateSimulation.Parameters exposing
     , zpuit_oce0
     )
 
-import ClimateSimulation.ExperienceValues as EV
+import ClimateSimulation.Duration as Duration exposing (Duration)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
@@ -56,7 +56,7 @@ initialStateDecoderFromYear year =
 
 type alias Parameters =
     { initialState : InitialState
-    , ev : EV.ExperienceValues
+    , duration : Duration
     , fixed_eau : Bool
     , fixed_concentration : Bool
     , debranche_biologie : Bool
@@ -162,15 +162,15 @@ zpuit_oce0 parameters =
 
 
 endYear : Parameters -> Int
-endYear { initialState, ev } =
-    startYear initialState + EV.echeance ev
+endYear { initialState, duration } =
+    startYear initialState + Duration.intoYears duration
 
 
 simClimatDecoder : JD.Decoder Parameters
 simClimatDecoder =
     JD.succeed Parameters
         |> JDP.required "annee_debut" initialStateDecoder
-        |> JDP.hardcoded (EV.fromEcheance 10000)
+        |> JDP.hardcoded (Duration.fromYears 10000)
         |> JDP.required "fixed_eau" JD.bool
         |> JDP.required "fixed_concentration" JD.bool
         |> JDP.required "debranche_biologie" JD.bool

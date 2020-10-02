@@ -1,6 +1,6 @@
 port module TestWrapper exposing (main)
 
-import ClimateSimulation exposing (SimulationValues)
+import ClimateSimulation
 import Json.Decode as JD
 import Json.Encode as JE
 

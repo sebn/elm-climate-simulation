@@ -1,5 +1,5 @@
 module ClimateSimulation exposing
-    ( SimulationValues
+    ( ClimateSimulation
     , fromSimClimat
     , simulate
     , toSimClimat
@@ -16,19 +16,19 @@ import Json.Encode as JE
 import List.Nonempty as NEList
 
 
-type alias SimulationValues =
+type alias ClimateSimulation =
     { name : String
     , parameters : Parameters
     , results : List State
     }
 
 
-fromSimClimat : JD.Value -> Result JD.Error SimulationValues
+fromSimClimat : JD.Value -> Result JD.Error ClimateSimulation
 fromSimClimat json =
     JD.decodeValue simulationValuesDecoder json
 
 
-toSimClimat : SimulationValues -> JE.Value
+toSimClimat : ClimateSimulation -> JE.Value
 toSimClimat simulation =
     JE.object <|
         List.concat
@@ -98,19 +98,19 @@ duplicateLast items =
             first :: duplicateLast rest
 
 
-albedo_data : SimulationValues -> List Float
+albedo_data : ClimateSimulation -> List Float
 albedo_data sv =
     List.map State.albedoPercentage sv.results
 
 
-emissions_coo_data : SimulationValues -> List Float
+emissions_coo_data : ClimateSimulation -> List Float
 emissions_coo_data sv =
     List.map2 (calcul_emission_coo sv)
         sv.results
         (sv.results |> List.tail |> Maybe.withDefault [])
 
 
-calcul_emission_coo : SimulationValues -> State -> State -> Float
+calcul_emission_coo : ClimateSimulation -> State -> State -> Float
 calcul_emission_coo sv previousState state =
     if sv.parameters.fixed_concentration then
         0
@@ -122,9 +122,9 @@ calcul_emission_coo sv previousState state =
             / Duration.temps_elem sv.parameters.duration
 
 
-simulationValuesDecoder : JD.Decoder SimulationValues
+simulationValuesDecoder : JD.Decoder ClimateSimulation
 simulationValuesDecoder =
-    JD.succeed SimulationValues
+    JD.succeed ClimateSimulation
         |> JDP.required "simulation_name" JD.string
         |> JDP.custom Parameters.simClimatDecoder
         |> JDP.hardcoded []
@@ -149,7 +149,7 @@ n =
     100
 
 
-boucleT : SimulationValues -> List State
+boucleT : ClimateSimulation -> List State
 boucleT sv =
     let
         initialState =
@@ -164,7 +164,7 @@ boucleT sv =
         |> (::) initialState
 
 
-computeInitialState : SimulationValues -> State
+computeInitialState : ClimateSimulation -> State
 computeInitialState sv =
     let
         zT0 =
@@ -209,7 +209,7 @@ computeInitialState sv =
         }
 
 
-prependNextResult : SimulationValues -> Int -> NEList.Nonempty State -> NEList.Nonempty State
+prependNextResult : ClimateSimulation -> Int -> NEList.Nonempty State -> NEList.Nonempty State
 prependNextResult sv t previousStates =
     let
         previousState =
@@ -226,7 +226,7 @@ ev =
     Duration.fromYears 10000
 
 
-computeNextResult : SimulationValues -> Int -> State -> State
+computeNextResult : ClimateSimulation -> Int -> State -> State
 computeNextResult sv t (State previous) =
     List.range 1 niter
         |> List.foldl
@@ -234,7 +234,7 @@ computeNextResult sv t (State previous) =
             (State { previous | oscillation = 0 })
 
 
-computeNextIntermediateState : SimulationValues -> Int -> Int -> State -> State
+computeNextIntermediateState : ClimateSimulation -> Int -> Int -> State -> State
 computeNextIntermediateState sv t iter (State previousState) =
     let
         debug : String -> value -> value
@@ -358,12 +358,12 @@ computeNextIntermediateState sv t iter (State previousState) =
         }
 
 
-niveau_mer_data : SimulationValues -> List Float
+niveau_mer_data : ClimateSimulation -> List Float
 niveau_mer_data sv =
     List.indexedMap (calcul_niveau_mer sv) sv.results
 
 
-calcul_niveau_mer : SimulationValues -> Int -> State -> Float
+calcul_niveau_mer : ClimateSimulation -> Int -> State -> Float
 calcul_niveau_mer sv t (State { zphig, zT }) =
     if t == 0 then
         Parameters.niveau_mer0 sv.parameters
@@ -427,7 +427,7 @@ calcul_niveau_mer sv t (State { zphig, zT }) =
         hmer - PhysicsConstants.hmeract
 
 
-calcul_oscillation : SimulationValues -> Int -> State -> Float -> Float -> Int
+calcul_oscillation : ClimateSimulation -> Int -> State -> Float -> Float -> Int
 calcul_oscillation sv iter (State previous) zT zCO2 =
     let
         oscillation =
@@ -551,7 +551,7 @@ calcul_forcage_serre_H2O zrapport_H2O =
         PhysicsConstants.a_H2O
 
 
-calcul_rapport_H2O : SimulationValues -> Float -> Float
+calcul_rapport_H2O : ClimateSimulation -> Float -> Float
 calcul_rapport_H2O sv zT =
     if sv.parameters.fixed_eau then
         sv.parameters.rapport_H2O_value / 100
@@ -570,7 +570,7 @@ calcul_rapport_H2O sv zT =
                 )
 
 
-calcul_zCO2 : SimulationValues -> State -> Float -> Float -> Float
+calcul_zCO2 : ClimateSimulation -> State -> Float -> Float -> Float
 calcul_zCO2 sv previousState emission_coo_ppm dt_ =
     if sv.parameters.fixed_concentration then
         sv.parameters.coo_concentr_value
@@ -589,7 +589,7 @@ calcul_emission_coo_ppm zsomme_flux =
     zsomme_flux * (PhysicsConstants.concentration_coo_actuel / PhysicsConstants.coo_Gt_act)
 
 
-calcul_zsomme_flux_const : SimulationValues -> Float -> Float -> Float -> Float -> Float
+calcul_zsomme_flux_const : ClimateSimulation -> Float -> Float -> Float -> Float -> Float
 calcul_zsomme_flux_const sv zpuit_oce zpuit_bio zB_ocean zT_ancien =
     max 0 (min 1 (1 - zpuit_oce - zpuit_bio))
         * (sv.parameters.emit_anthro_coo_value + sv.parameters.volcan_value)
@@ -622,7 +622,7 @@ calcul_zCO2eq_oce zT =
         + max 0 (5 * (zT - PhysicsConstants.tKelvin - c))
 
 
-calcul_fdegaz : SimulationValues -> Float -> Float
+calcul_fdegaz : ClimateSimulation -> Float -> Float
 calcul_fdegaz sv zT =
     if sv.parameters.debranche_ocean || sv.parameters.fixed_ocean then
         0
@@ -642,19 +642,19 @@ calcul_zsomme_C zpuit_oce zpuit_bio zC_alteration zC_stockage zB_ocean =
         * zB_ocean
 
 
-calcul_zC_stockage : SimulationValues -> Float -> Float
+calcul_zC_stockage : ClimateSimulation -> Float -> Float
 calcul_zC_stockage sv zphig_ancien =
     calcul_zC_alteration
         (-sv.parameters.stockage_biologique_value * 1.0e-3)
         zphig_ancien
 
 
-calcul_fin : SimulationValues -> Float -> Float
+calcul_fin : ClimateSimulation -> Float -> Float
 calcul_fin sv zalbedo =
     calcul_fin0 sv * (1 - zalbedo)
 
 
-calcul_albedo : SimulationValues -> Float -> Float
+calcul_albedo : ClimateSimulation -> Float -> Float
 calcul_albedo sv zphig =
     if sv.parameters.fixed_albedo then
         sv.parameters.albedo_value / 100
@@ -672,7 +672,7 @@ calcul_albedo sv zphig =
             * (PhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
 
 
-calcul_zpuit_bio : SimulationValues -> Float
+calcul_zpuit_bio : ClimateSimulation -> Float
 calcul_zpuit_bio sv =
     if sv.parameters.fixed_concentration then
         0
@@ -684,7 +684,7 @@ calcul_zpuit_bio sv =
         sv.parameters.puit_bio_value / 100
 
 
-calcul_zpuit_oce : SimulationValues -> State -> Float
+calcul_zpuit_oce : ClimateSimulation -> State -> Float
 calcul_zpuit_oce sv (State { zT, zpuit_oce }) =
     if sv.parameters.fixed_concentration || sv.parameters.debranche_ocean || sv.parameters.fixed_ocean then
         zpuit_oce
@@ -716,7 +716,7 @@ calcul_zC_alteration cmax zphig =
         0.0
 
 
-calcul_zphig : SimulationValues -> State -> Float -> Float
+calcul_zphig : ClimateSimulation -> State -> Float -> Float
 calcul_zphig sv (State previousState) tau_niveau_calottes =
     calculT (calcul_phieq sv previousState.zT) previousState.zphig tau_niveau_calottes dt
         |> max 0
@@ -728,7 +728,7 @@ calculT tEq tPrec tau dt_ =
     tPrec + (tEq - tPrec) * (1 - exp (-dt_ / tau))
 
 
-calcul_tau_niveau_calottes : SimulationValues -> Int -> Float
+calcul_tau_niveau_calottes : ClimateSimulation -> Int -> Float
 calcul_tau_niveau_calottes sv t =
     -- let
     --     -- FIXME
@@ -741,7 +741,7 @@ calcul_tau_niveau_calottes sv t =
     PhysicsConstants.tau_niveau_calottes_englacement
 
 
-calcul_phieq : SimulationValues -> Float -> Float
+calcul_phieq : ClimateSimulation -> Float -> Float
 calcul_phieq sv zT =
     (PhysicsConstants.a_calottes
         * (zT - PhysicsConstants.tKelvin)
@@ -755,12 +755,12 @@ calcul_phieq sv zT =
         |> max PhysicsConstants.niveau_calottes_min
 
 
-calcul_alteration_max : SimulationValues -> Float
+calcul_alteration_max : ClimateSimulation -> Float
 calcul_alteration_max sv =
     PhysicsConstants.c_alteration_naturel * (sv.parameters.alteration_value / 100.0)
 
 
-calcul_b_ocean : SimulationValues -> Float
+calcul_b_ocean : ClimateSimulation -> Float
 calcul_b_ocean sv =
     if sv.parameters.debranche_ocean then
         0
@@ -774,7 +774,7 @@ calcul_b_ocean sv =
 
 {-| Insolation 65º lat. N
 -}
-insol65N : SimulationValues -> Float
+insol65N : ClimateSimulation -> Float
 insol65N sv =
     calcul_fin0 sv
         * cos (delta_angle sv)
@@ -795,7 +795,7 @@ insol65N sv =
             )
 
 
-delta_angle : SimulationValues -> Float
+delta_angle : ClimateSimulation -> Float
 delta_angle sv =
     abs
         ((toFloat PhysicsConstants.lat_Mil - sv.parameters.obliquite_value)
@@ -805,7 +805,7 @@ delta_angle sv =
         )
 
 
-calcul_fin0 : SimulationValues -> Float
+calcul_fin0 : ClimateSimulation -> Float
 calcul_fin0 sv =
     PhysicsConstants.puissance_recue_zero
         * (sv.parameters.puissance_soleil_value / 100.0)
@@ -823,7 +823,7 @@ niter =
     max 4 (truncate (3 * exp (0.3 * log (Duration.temps_elem ev))))
 
 
-simulate : SimulationValues -> SimulationValues
+simulate : ClimateSimulation -> ClimateSimulation
 simulate config =
     { config | results = boucleT config }
 

@@ -132,7 +132,7 @@ next parameters t (State previous) =
 
 
 nextIntermediate : Parameters -> Int -> Int -> State -> State
-nextIntermediate parameters t iter (State previousState) =
+nextIntermediate parameters t iter (State previous) =
     let
         debug : String -> value -> value
         debug msg =
@@ -145,40 +145,40 @@ nextIntermediate parameters t iter (State previousState) =
             calcul_tau_niveau_calottes parameters t
 
         zphig_raw =
-            calcul_zphig parameters (State previousState) tau_niveau_calottes
+            calcul_zphig parameters (State previous) tau_niveau_calottes
 
         zalbedo =
             calcul_albedo parameters zphig_raw
 
         zC_alteration =
-            calcul_zC_alteration previousState.alteration_max previousState.zphig
+            calcul_zC_alteration previous.alteration_max previous.zphig
 
         zpuit_oce =
-            calcul_zpuit_oce parameters (State previousState)
+            calcul_zpuit_oce parameters (State previous)
 
         zC_stockage =
-            calcul_zC_stockage parameters previousState.zphig
+            calcul_zC_stockage parameters previous.zphig
 
         zB_ocean =
-            calcul_zB_ocean (State previousState)
+            calcul_zB_ocean (State previous)
 
         zsomme_flux_const =
-            calcul_zsomme_flux_const parameters zpuit_oce previousState.zpuit_bio zB_ocean previousState.zT
+            calcul_zsomme_flux_const parameters zpuit_oce previous.zpuit_bio zB_ocean previous.zT
 
         zsomme_C =
-            calcul_zsomme_C zpuit_oce previousState.zpuit_bio zC_alteration zC_stockage zB_ocean
+            calcul_zsomme_C zpuit_oce previous.zpuit_bio zC_alteration zC_stockage zB_ocean
 
         zsomme_flux =
-            zsomme_flux_const + previousState.zCO2 * zsomme_C
+            zsomme_flux_const + previous.zCO2 * zsomme_C
 
         emission_coo_ppm =
             calcul_emission_coo_ppm zsomme_flux
 
         zCO2_raw =
-            calcul_zCO2 parameters (State previousState) emission_coo_ppm dt
+            calcul_zCO2 parameters (State previous) emission_coo_ppm dt
 
         zrapport_H2O =
-            calcul_rapport_H2O parameters previousState.zT
+            calcul_rapport_H2O parameters previous.zT
 
         forcage_serre_eau =
             calcul_forcage_serre_H2O zrapport_H2O
@@ -199,55 +199,55 @@ nextIntermediate parameters t iter (State previousState) =
             calcul_zTeq fin g
 
         zT_raw =
-            calcul_zT zTeq previousState.zT dt
+            calcul_zT zTeq previous.zT dt
 
         oscillation =
-            calcul_oscillation parameters iter (State previousState) zT_raw zCO2_raw
+            calcul_oscillation parameters iter (State previous) zT_raw zCO2_raw
 
         zCO2 =
             if oscillation == 1 && not parameters.fixed_concentration then
-                (zCO2_raw + previousState.zCO2 + 0.5 * previousState.zCO2_prec) / 2.5
+                (zCO2_raw + previous.zCO2 + 0.5 * previous.zCO2_prec) / 2.5
 
             else
                 zCO2_raw
 
         zT =
             if oscillation == 1 then
-                (zT_raw + previousState.zT + 0.5 * previousState.zT_ancien) / 2.5
+                (zT_raw + previous.zT + 0.5 * previous.zT_ancien) / 2.5
 
             else
                 zT_raw
 
         zphig =
             if oscillation == 1 then
-                (zphig_raw + previousState.zphig + 0.5 * previousState.zphig_ancien) / 2.5
+                (zphig_raw + previous.zphig + 0.5 * previous.zphig_ancien) / 2.5
 
             else
                 zphig_raw
     in
     State
-        { previousState
-            | fdegaz = calcul_fdegaz parameters previousState.zT
+        { previous
+            | fdegaz = calcul_fdegaz parameters previous.zT
             , fin = fin
             , forcage_serre = forcage_serre
             , forcage_serre_CO2 = forcage_serre_CO2
             , forcage_serre_eau = forcage_serre_eau
             , g = g
             , oscillation = oscillation
-            , phieq = calcul_phieq parameters previousState.zT
+            , phieq = calcul_phieq parameters previous.zT
             , tau_niveau_calottes = tau_niveau_calottes
             , zB_ocean = zB_ocean
             , zC_alteration = zC_alteration
             , zC_stockage = zC_stockage
             , zCO2 = zCO2
-            , zCO2_prec = previousState.zCO2
-            , zCO2eq_oce = calcul_zCO2eq_oce previousState.zT
+            , zCO2_prec = previous.zCO2
+            , zCO2eq_oce = calcul_zCO2eq_oce previous.zT
             , zT = zT
-            , zT_ancien = previousState.zT
+            , zT_ancien = previous.zT
             , zTeq = zTeq
             , zalbedo = zalbedo
             , zphig = zphig
-            , zphig_ancien = previousState.zphig
+            , zphig_ancien = previous.zphig
             , zpuit_oce = zpuit_oce
             , zrapport_H2O = zrapport_H2O
             , zsomme_C = zsomme_C
@@ -516,8 +516,8 @@ calcul_zpuit_oce parameters (State { zT, zpuit_oce }) =
 
 
 calcul_zB_ocean : State -> Float
-calcul_zB_ocean (State previousState) =
-    calcul_zC_alteration previousState.b_ocean previousState.zphig
+calcul_zB_ocean (State previous) =
+    calcul_zC_alteration previous.b_ocean previous.zphig
 
 
 calcul_zC_alteration : Float -> Float -> Float
@@ -533,8 +533,8 @@ calcul_zC_alteration cmax zphig =
 
 
 calcul_zphig : Parameters -> State -> Float -> Float
-calcul_zphig parameters (State previousState) tau_niveau_calottes =
-    calculT (calcul_phieq parameters previousState.zT) previousState.zphig tau_niveau_calottes dt
+calcul_zphig parameters (State previous) tau_niveau_calottes =
+    calculT (calcul_phieq parameters previous.zT) previous.zphig tau_niveau_calottes dt
         |> max 0
         |> min 90
 

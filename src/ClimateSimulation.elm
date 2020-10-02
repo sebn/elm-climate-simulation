@@ -7,7 +7,9 @@ module ClimateSimulation exposing
 
 import ClimateSimulation.ExperienceValues as EV exposing (ExperienceValues)
 import ClimateSimulation.Math exposing (exp, log)
+import ClimateSimulation.Parameters as Parameters exposing (Parameters)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
+import ClimateSimulation.State as State exposing (State(..))
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Json.Encode as JE
@@ -15,34 +17,8 @@ import List.Nonempty as NEList
 
 
 type alias SimulationValues =
-    { simulation_name : String
-
-    -- CONFIG
-    , initialState : InitialState
-    , fixed_eau : Bool
-    , fixed_concentration : Bool
-    , debranche_biologie : Bool
-    , fixed_ocean : Bool
-    , debranche_ocean : Bool
-    , fixed_albedo : Bool
-    , rapport_H2O_value : Float
-    , puit_bio_value : Float
-
-    -- FIXME: Does puit_oce_value actually change anything?
-    , puit_oce_value : Float
-    , albedo_value : Float
-    , coo_concentr_value : Float
-    , puissance_soleil_value : Float
-    , distance_ts_value : Float
-    , obliquite_value : Float
-    , excentricite_value : Float
-    , precession_value : Float
-    , alteration_value : Float
-    , emit_anthro_coo_value : Float
-    , volcan_value : Float
-    , stockage_biologique_value : Float
-
-    -- RESULTS
+    { name : String
+    , parameters : Parameters
     , results : List State
     }
 
@@ -53,83 +29,60 @@ fromSimClimat json =
 
 
 toSimClimat : SimulationValues -> JE.Value
-toSimClimat sv =
-    JE.object
-        [ ( "simulation_name", JE.string sv.simulation_name )
-        , ( "ID_MIN", JE.int 0 )
-        , ( "ID_MAX", JE.int n )
-        , ( "TEMPS_ELEM", JE.int 1 )
-        , ( "INTERN_ECHEANCE", JE.int 100 )
-        , ( "annee_debut", JE.int (startYear sv.initialState) )
-        , ( "annee_fin", JE.int (endYear sv.initialState) )
-        , ( "fixed_eau", JE.bool sv.fixed_eau )
-        , ( "fixed_concentration", JE.bool sv.fixed_concentration )
-        , ( "debranche_biologie", JE.bool sv.debranche_biologie )
-        , ( "fixed_ocean", JE.bool sv.fixed_ocean )
-        , ( "debranche_ocean", JE.bool sv.debranche_ocean )
-        , ( "fixed_albedo", JE.bool sv.fixed_albedo )
-        , ( "rapport_H2O_value", JE.float sv.rapport_H2O_value )
-        , ( "puit_bio_value", JE.float sv.puit_bio_value )
-        , ( "puit_oce_value", JE.float sv.puit_oce_value )
-        , ( "albedo_value", JE.float sv.albedo_value )
-        , ( "coo_concentr_value", JE.float sv.coo_concentr_value )
-        , ( "puissance_soleil_value", JE.float sv.puissance_soleil_value )
-        , ( "distance_ts_value", JE.float sv.distance_ts_value )
-        , ( "obliquite_value", JE.float sv.obliquite_value )
-        , ( "excentricite_value", JE.float sv.excentricite_value )
-        , ( "precession_value", JE.float sv.precession_value )
-        , ( "alteration_value", JE.float sv.alteration_value )
-        , ( "emit_anthro_coo_value", JE.float sv.emit_anthro_coo_value )
-        , ( "volcan_value", JE.float sv.volcan_value )
-        , ( "stockage_biologique_value", JE.float sv.stockage_biologique_value )
-        , ( "temperature_data"
-          , toSimClimatDataArray
-                { data = List.map .zT sv.results
-                , pastData = temperature_past_data sv.initialState
-                }
-          )
-        , ( "concentrations_coo_data"
-          , toSimClimatDataArray
-                { data = List.map .zCO2 sv.results
-                , pastData = []
-                }
-          )
-        , ( "niveau_calottes_data"
-          , toSimClimatDataArray
-                { data = List.map .zphig sv.results
-                , pastData = []
-                }
-          )
-        , ( "emissions_coo_data"
-          , toSimClimatDataArray
-                { data = emissions_coo_data sv |> duplicateLast
-                , pastData = []
-                }
-          )
-        , ( "albedo_data"
-          , toSimClimatDataArray
-                { data = albedo_data sv
-                , pastData = []
-                }
-          )
-        , ( "niveau_mer_data"
-          , toSimClimatDataArray
-                { data = niveau_mer_data sv
-                , pastData = []
-                }
-          )
-        , ( "modelPhysicsConstants", PhysicsConstants.toSimClimat )
-        , ( "modelVarsConstants"
-          , JE.object
-                [ ( "modelConstants", simClimatModelConstants )
-                ]
-          )
-        ]
-
-
-endYear : InitialState -> Int
-endYear initialState =
-    startYear initialState + EV.echeance ev
+toSimClimat simulation =
+    JE.object <|
+        List.concat
+            [ [ ( "simulation_name", JE.string simulation.name )
+              , ( "ID_MIN", JE.int 0 )
+              , ( "ID_MAX", JE.int n )
+              , ( "TEMPS_ELEM", JE.int 1 )
+              , ( "INTERN_ECHEANCE", JE.int 100 )
+              ]
+            , Parameters.toSimClimatFields simulation.parameters
+            , [ ( "temperature_data"
+                , toSimClimatDataArray
+                    { data = List.map State.temperature simulation.results
+                    , pastData = Parameters.temperature_past_data simulation.parameters
+                    }
+                )
+              , ( "concentrations_coo_data"
+                , toSimClimatDataArray
+                    { data = List.map State.co2Concentration simulation.results
+                    , pastData = []
+                    }
+                )
+              , ( "niveau_calottes_data"
+                , toSimClimatDataArray
+                    { data = List.map State.iceCap simulation.results
+                    , pastData = []
+                    }
+                )
+              , ( "emissions_coo_data"
+                , toSimClimatDataArray
+                    { data = emissions_coo_data simulation |> duplicateLast
+                    , pastData = []
+                    }
+                )
+              , ( "albedo_data"
+                , toSimClimatDataArray
+                    { data = albedo_data simulation
+                    , pastData = []
+                    }
+                )
+              , ( "niveau_mer_data"
+                , toSimClimatDataArray
+                    { data = niveau_mer_data simulation
+                    , pastData = []
+                    }
+                )
+              , ( "modelPhysicsConstants", PhysicsConstants.toSimClimat )
+              , ( "modelVarsConstants"
+                , JE.object
+                    [ ( "modelConstants", simClimatModelConstants )
+                    ]
+                )
+              ]
+            ]
 
 
 duplicateLast : List a -> List a
@@ -147,7 +100,7 @@ duplicateLast items =
 
 albedo_data : SimulationValues -> List Float
 albedo_data sv =
-    List.map (.zalbedo >> (*) 100) sv.results
+    List.map State.albedoPercentage sv.results
 
 
 emissions_coo_data : SimulationValues -> List Float
@@ -159,77 +112,22 @@ emissions_coo_data sv =
 
 calcul_emission_coo : SimulationValues -> State -> State -> Float
 calcul_emission_coo sv previousState state =
-    if sv.fixed_concentration then
+    if sv.parameters.fixed_concentration then
         0
 
     else
-        (state.zCO2 - previousState.zCO2) / EV.temps_elem ev
+        (State.co2Concentration state
+            - State.co2Concentration previousState
+        )
+            / EV.temps_elem ev
 
 
 simulationValuesDecoder : JD.Decoder SimulationValues
 simulationValuesDecoder =
     JD.succeed SimulationValues
         |> JDP.required "simulation_name" JD.string
-        |> JDP.required "annee_debut" initialStateDecoder
-        |> JDP.required "fixed_eau" JD.bool
-        |> JDP.required "fixed_concentration" JD.bool
-        |> JDP.required "debranche_biologie" JD.bool
-        |> JDP.required "fixed_ocean" JD.bool
-        |> JDP.required "debranche_ocean" JD.bool
-        |> JDP.required "fixed_albedo" JD.bool
-        |> JDP.required "rapport_H2O_value" JD.float
-        |> JDP.required "puit_bio_value" JD.float
-        |> JDP.required "puit_oce_value" JD.float
-        |> JDP.required "albedo_value" JD.float
-        |> JDP.required "coo_concentr_value" JD.float
-        |> JDP.required "puissance_soleil_value" JD.float
-        |> JDP.required "distance_ts_value" JD.float
-        |> JDP.required "obliquite_value" JD.float
-        |> JDP.required "excentricite_value" JD.float
-        |> JDP.required "precession_value" JD.float
-        |> JDP.required "alteration_value" JD.float
-        |> JDP.required "emit_anthro_coo_value" JD.float
-        |> JDP.required "volcan_value" JD.float
-        |> JDP.required "stockage_biologique_value" JD.float
+        |> JDP.custom Parameters.simClimatDecoder
         |> JDP.hardcoded []
-
-
-
--- INITIAL STATE
-
-
-type InitialState
-    = Now
-    | PreIndustrial
-
-
-startYear : InitialState -> Basics.Int
-startYear initialState =
-    case initialState of
-        PreIndustrial ->
-            1750
-
-        Now ->
-            2007
-
-
-initialStateDecoder : JD.Decoder InitialState
-initialStateDecoder =
-    JD.float |> JD.andThen (truncate >> initialStateDecoderFromYear)
-
-
-initialStateDecoderFromYear : Int -> JD.Decoder InitialState
-initialStateDecoderFromYear year =
-    case year of
-        1750 ->
-            JD.succeed PreIndustrial
-
-        2007 ->
-            JD.succeed Now
-
-        _ ->
-            -- FIXME
-            JD.succeed Now
 
 
 toSimClimatDataArray : { data : List Float, pastData : List Float } -> JE.Value
@@ -251,75 +149,6 @@ n =
     100
 
 
-stateToSimClimat : State -> JE.Value
-stateToSimClimat state =
-    JE.object
-        [ ( "alteration_max", JE.float state.alteration_max )
-        , ( "b_ocean", JE.float state.b_ocean )
-        , ( "fdegaz", JE.float state.fdegaz )
-        , ( "fin", JE.float state.fin )
-        , ( "forcage_serre", JE.float state.forcage_serre )
-        , ( "forcage_serre_CO2", JE.float state.forcage_serre_CO2 )
-        , ( "forcage_serre_eau", JE.float state.forcage_serre_eau )
-        , ( "g", JE.float state.g )
-        , ( "insol65N", JE.float state.insol65N )
-        , ( "oscillation", JE.int state.oscillation )
-        , ( "phieq", JE.float state.phieq )
-        , ( "tau_niveau_calottes", JE.float state.tau_niveau_calottes )
-        , ( "zB_ocean", JE.float state.zB_ocean )
-        , ( "zC_alteration", JE.float state.zC_alteration )
-        , ( "zC_stockage", JE.float state.zC_stockage )
-        , ( "zCO2", JE.float state.zCO2 )
-
-        -- , ( "zCO2_prec", JE.float state.zCO2_prec )
-        , ( "zCO2eq_oce", JE.float state.zCO2eq_oce )
-        , ( "zT", JE.float state.zT )
-        , ( "zT_ancien", JE.float state.zT_ancien )
-        , ( "zTeq", JE.float state.zTeq )
-        , ( "zalbedo", JE.float state.zalbedo )
-        , ( "zphig", JE.float state.zphig )
-        , ( "zphig_ancien", JE.float state.zphig_ancien )
-        , ( "zpuit_bio", JE.float state.zpuit_bio )
-        , ( "zpuit_oce", JE.float state.zpuit_oce )
-        , ( "zrapport_H2O", JE.float state.zrapport_H2O )
-        , ( "zsomme_C", JE.float state.zsomme_C )
-        , ( "zsomme_flux_const", JE.float state.zsomme_flux_const )
-        ]
-
-
-type alias State =
-    { alteration_max : Float
-    , b_ocean : Float
-    , fdegaz : Float
-    , fin : Float
-    , forcage_serre : Float
-    , forcage_serre_CO2 : Float
-    , forcage_serre_eau : Float
-    , g : Float
-    , insol65N : Float
-    , oscillation : Int
-    , phieq : Float
-    , tau_niveau_calottes : Float
-    , zB_ocean : Float
-    , zC_alteration : Float
-    , zC_stockage : Float
-    , zCO2 : Float
-    , zCO2_prec : Float
-    , zCO2eq_oce : Float
-    , zT : Float
-    , zT_ancien : Float
-    , zTeq : Float
-    , zalbedo : Float
-    , zphig : Float
-    , zphig_ancien : Float
-    , zpuit_bio : Float
-    , zpuit_oce : Float
-    , zrapport_H2O : Float
-    , zsomme_C : Float
-    , zsomme_flux_const : Float
-    }
-
-
 boucleT : SimulationValues -> List State
 boucleT sv =
     let
@@ -339,53 +168,45 @@ computeInitialState : SimulationValues -> State
 computeInitialState sv =
     let
         zT0 =
-            calcul_zT0 sv
+            Parameters.zT0 sv.parameters
 
         zphig0 =
-            calcul_zphig0 sv
+            Parameters.zphig0 sv.parameters
 
         zCO2 =
-            sv.coo_concentr_value
+            sv.parameters.coo_concentr_value
     in
-    { alteration_max = calcul_alteration_max sv
-    , b_ocean = calcul_b_ocean sv
-    , fdegaz = 0
-    , fin = calcul_fin0 sv
-    , forcage_serre = 0
-    , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
-    , forcage_serre_eau = 0
-    , g = 0
-    , insol65N = insol65N sv
-    , oscillation = 0
-    , phieq = calcul_phieq sv zT0
-    , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
-    , zB_ocean = 0
-    , zC_alteration = 0
-    , zC_stockage = 0
-    , zCO2 = zCO2
-    , zCO2_prec = zCO2
-    , zCO2eq_oce = 0
-    , zT = zT0
-    , zT_ancien = zT0
-    , zTeq = 0
-    , zalbedo = calcul_albedo sv zphig0
-    , zphig = zphig0
-    , zphig_ancien = zphig0
-    , zpuit_bio = calcul_zpuit_bio sv
-    , zpuit_oce = calcul_zpuit_oce0 sv
-    , zrapport_H2O = calcul_rapport_H2O sv zT0
-    , zsomme_C = 0
-    , zsomme_flux_const = 0
-    }
-
-
-calcul_zpuit_oce0 : SimulationValues -> Float
-calcul_zpuit_oce0 sv =
-    if sv.fixed_concentration || sv.debranche_ocean then
-        0
-
-    else
-        sv.puit_oce_value / 100.0
+    State
+        { alteration_max = calcul_alteration_max sv
+        , b_ocean = calcul_b_ocean sv
+        , fdegaz = 0
+        , fin = calcul_fin0 sv
+        , forcage_serre = 0
+        , forcage_serre_CO2 = calcul_forcage_serre_CO2 zCO2
+        , forcage_serre_eau = 0
+        , g = 0
+        , insol65N = insol65N sv
+        , oscillation = 0
+        , phieq = calcul_phieq sv zT0
+        , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
+        , zB_ocean = 0
+        , zC_alteration = 0
+        , zC_stockage = 0
+        , zCO2 = zCO2
+        , zCO2_prec = zCO2
+        , zCO2eq_oce = 0
+        , zT = zT0
+        , zT_ancien = zT0
+        , zTeq = 0
+        , zalbedo = calcul_albedo sv zphig0
+        , zphig = zphig0
+        , zphig_ancien = zphig0
+        , zpuit_bio = calcul_zpuit_bio sv
+        , zpuit_oce = Parameters.zpuit_oce0 sv.parameters
+        , zrapport_H2O = calcul_rapport_H2O sv zT0
+        , zsomme_C = 0
+        , zsomme_flux_const = 0
+        }
 
 
 prependNextResult : SimulationValues -> Int -> NEList.Nonempty State -> NEList.Nonempty State
@@ -405,37 +226,16 @@ ev =
     EV.fromEcheance 10000
 
 
-calcul_zT0 : SimulationValues -> Float
-calcul_zT0 sv =
-    (+) PhysicsConstants.tKelvin <|
-        case sv.initialState of
-            PreIndustrial ->
-                PhysicsConstants.temperature_1750
-
-            _ ->
-                PhysicsConstants.temperature_actuelle
-
-
-calcul_zphig0 : SimulationValues -> Float
-calcul_zphig0 sv =
-    case sv.initialState of
-        PreIndustrial ->
-            PhysicsConstants.niveau_calottes_1750
-
-        _ ->
-            PhysicsConstants.niveau_calottes_actuel
-
-
 computeNextResult : SimulationValues -> Int -> State -> State
-computeNextResult sv t previous =
+computeNextResult sv t (State previous) =
     List.range 1 niter
         |> List.foldl
             (computeNextIntermediateState sv t)
-            { previous | oscillation = 0 }
+            (State { previous | oscillation = 0 })
 
 
 computeNextIntermediateState : SimulationValues -> Int -> Int -> State -> State
-computeNextIntermediateState sv t iter previousState =
+computeNextIntermediateState sv t iter (State previousState) =
     let
         debug : String -> value -> value
         debug msg =
@@ -448,7 +248,7 @@ computeNextIntermediateState sv t iter previousState =
             calcul_tau_niveau_calottes sv t
 
         zphig_raw =
-            calcul_zphig sv previousState tau_niveau_calottes
+            calcul_zphig sv (State previousState) tau_niveau_calottes
 
         zalbedo =
             calcul_albedo sv zphig_raw
@@ -457,13 +257,13 @@ computeNextIntermediateState sv t iter previousState =
             calcul_zC_alteration previousState.alteration_max previousState.zphig
 
         zpuit_oce =
-            calcul_zpuit_oce sv previousState
+            calcul_zpuit_oce sv (State previousState)
 
         zC_stockage =
             calcul_zC_stockage sv previousState.zphig
 
         zB_ocean =
-            calcul_zB_ocean previousState
+            calcul_zB_ocean (State previousState)
 
         zsomme_flux_const =
             calcul_zsomme_flux_const sv zpuit_oce previousState.zpuit_bio zB_ocean previousState.zT
@@ -478,7 +278,7 @@ computeNextIntermediateState sv t iter previousState =
             calcul_emission_coo_ppm zsomme_flux
 
         zCO2_raw =
-            calcul_zCO2 sv previousState emission_coo_ppm dt
+            calcul_zCO2 sv (State previousState) emission_coo_ppm dt
 
         zrapport_H2O =
             calcul_rapport_H2O sv previousState.zT
@@ -505,10 +305,10 @@ computeNextIntermediateState sv t iter previousState =
             calcul_zT zTeq previousState.zT dt
 
         oscillation =
-            calcul_oscillation sv iter previousState zT_raw zCO2_raw
+            calcul_oscillation sv iter (State previousState) zT_raw zCO2_raw
 
         zCO2 =
-            if oscillation == 1 && not sv.fixed_concentration then
+            if oscillation == 1 && not sv.parameters.fixed_concentration then
                 (zCO2_raw + previousState.zCO2 + 0.5 * previousState.zCO2_prec) / 2.5
 
             else
@@ -528,33 +328,34 @@ computeNextIntermediateState sv t iter previousState =
             else
                 zphig_raw
     in
-    { previousState
-        | fdegaz = calcul_fdegaz sv previousState.zT
-        , fin = fin
-        , forcage_serre = forcage_serre
-        , forcage_serre_CO2 = forcage_serre_CO2
-        , forcage_serre_eau = forcage_serre_eau
-        , g = g
-        , oscillation = oscillation
-        , phieq = calcul_phieq sv previousState.zT
-        , tau_niveau_calottes = tau_niveau_calottes
-        , zB_ocean = zB_ocean
-        , zC_alteration = zC_alteration
-        , zC_stockage = zC_stockage
-        , zCO2 = zCO2
-        , zCO2_prec = previousState.zCO2
-        , zCO2eq_oce = calcul_zCO2eq_oce previousState.zT
-        , zT = zT
-        , zT_ancien = previousState.zT
-        , zTeq = zTeq
-        , zalbedo = zalbedo
-        , zphig = zphig
-        , zphig_ancien = previousState.zphig
-        , zpuit_oce = zpuit_oce
-        , zrapport_H2O = zrapport_H2O
-        , zsomme_C = zsomme_C
-        , zsomme_flux_const = zsomme_flux_const
-    }
+    State
+        { previousState
+            | fdegaz = calcul_fdegaz sv previousState.zT
+            , fin = fin
+            , forcage_serre = forcage_serre
+            , forcage_serre_CO2 = forcage_serre_CO2
+            , forcage_serre_eau = forcage_serre_eau
+            , g = g
+            , oscillation = oscillation
+            , phieq = calcul_phieq sv previousState.zT
+            , tau_niveau_calottes = tau_niveau_calottes
+            , zB_ocean = zB_ocean
+            , zC_alteration = zC_alteration
+            , zC_stockage = zC_stockage
+            , zCO2 = zCO2
+            , zCO2_prec = previousState.zCO2
+            , zCO2eq_oce = calcul_zCO2eq_oce previousState.zT
+            , zT = zT
+            , zT_ancien = previousState.zT
+            , zTeq = zTeq
+            , zalbedo = zalbedo
+            , zphig = zphig
+            , zphig_ancien = previousState.zphig
+            , zpuit_oce = zpuit_oce
+            , zrapport_H2O = zrapport_H2O
+            , zsomme_C = zsomme_C
+            , zsomme_flux_const = zsomme_flux_const
+        }
 
 
 niveau_mer_data : SimulationValues -> List Float
@@ -563,14 +364,9 @@ niveau_mer_data sv =
 
 
 calcul_niveau_mer : SimulationValues -> Int -> State -> Float
-calcul_niveau_mer sv t { zphig, zT } =
+calcul_niveau_mer sv t (State { zphig, zT }) =
     if t == 0 then
-        case sv.initialState of
-            PreIndustrial ->
-                PhysicsConstants.niveau_mer_1750
-
-            _ ->
-                0
+        Parameters.niveau_mer0 sv.parameters
 
     else
         let
@@ -588,8 +384,8 @@ calcul_niveau_mer sv t { zphig, zT } =
                 if index < 0 then
                     let
                         past_data =
-                            sv.initialState
-                                |> temperature_past_data
+                            sv.parameters
+                                |> Parameters.temperature_past_data
                                 |> List.drop index
                                 -- get_past(-index) ???
                                 |> List.head
@@ -603,7 +399,7 @@ calcul_niveau_mer sv t { zphig, zT } =
                             sv.results
                                 |> List.drop index
                                 |> List.head
-                                |> Maybe.andThen (Just << .zT)
+                                |> Maybe.andThen (Just << State.temperature)
                                 |> Maybe.withDefault 0
                     in
                     zT * 0.2 + data * 0.8
@@ -632,7 +428,7 @@ calcul_niveau_mer sv t { zphig, zT } =
 
 
 calcul_oscillation : SimulationValues -> Int -> State -> Float -> Float -> Int
-calcul_oscillation sv iter previous zT zCO2 =
+calcul_oscillation sv iter (State previous) zT zCO2 =
     let
         oscillation =
             if (iter >= 3) && (previous.oscillation == 0) then
@@ -658,7 +454,7 @@ calcul_oscillation sv iter previous zT zCO2 =
             else
                 previous.oscillation
     in
-    if sv.fixed_concentration then
+    if sv.parameters.fixed_concentration then
         oscillation
 
     else if (iter >= 3) && (oscillation == 0) then
@@ -757,8 +553,8 @@ calcul_forcage_serre_H2O zrapport_H2O =
 
 calcul_rapport_H2O : SimulationValues -> Float -> Float
 calcul_rapport_H2O sv zT =
-    if sv.fixed_eau then
-        sv.rapport_H2O_value / 100
+    if sv.parameters.fixed_eau then
+        sv.parameters.rapport_H2O_value / 100
 
     else
         -- utilisation de la formule de Rankine donnant Psat
@@ -776,12 +572,12 @@ calcul_rapport_H2O sv zT =
 
 calcul_zCO2 : SimulationValues -> State -> Float -> Float -> Float
 calcul_zCO2 sv previousState emission_coo_ppm dt_ =
-    if sv.fixed_concentration then
-        sv.coo_concentr_value
+    if sv.parameters.fixed_concentration then
+        sv.parameters.coo_concentr_value
 
     else
         max 0 <|
-            previousState.zCO2
+            State.co2Concentration previousState
                 + emission_coo_ppm
                 * dt_
 
@@ -796,7 +592,7 @@ calcul_emission_coo_ppm zsomme_flux =
 calcul_zsomme_flux_const : SimulationValues -> Float -> Float -> Float -> Float -> Float
 calcul_zsomme_flux_const sv zpuit_oce zpuit_bio zB_ocean zT_ancien =
     max 0 (min 1 (1 - zpuit_oce - zpuit_bio))
-        * (sv.emit_anthro_coo_value + sv.volcan_value)
+        * (sv.parameters.emit_anthro_coo_value + sv.parameters.volcan_value)
         + max 0 (min 1 (1 - zpuit_bio))
         * zB_ocean
         * calcul_zCO2eq_oce zT_ancien
@@ -828,7 +624,7 @@ calcul_zCO2eq_oce zT =
 
 calcul_fdegaz : SimulationValues -> Float -> Float
 calcul_fdegaz sv zT =
-    if sv.debranche_ocean || sv.fixed_ocean then
+    if sv.parameters.debranche_ocean || sv.parameters.fixed_ocean then
         0
 
     else if zT - PhysicsConstants.tKelvin > PhysicsConstants.tcrit_oce then
@@ -849,7 +645,7 @@ calcul_zsomme_C zpuit_oce zpuit_bio zC_alteration zC_stockage zB_ocean =
 calcul_zC_stockage : SimulationValues -> Float -> Float
 calcul_zC_stockage sv zphig_ancien =
     calcul_zC_alteration
-        (-sv.stockage_biologique_value * 1.0e-3)
+        (-sv.parameters.stockage_biologique_value * 1.0e-3)
         zphig_ancien
 
 
@@ -860,8 +656,8 @@ calcul_fin sv zalbedo =
 
 calcul_albedo : SimulationValues -> Float -> Float
 calcul_albedo sv zphig =
-    if sv.fixed_albedo then
-        sv.albedo_value / 100
+    if sv.parameters.fixed_albedo then
+        sv.parameters.albedo_value / 100
 
     else if zphig > PhysicsConstants.phig_crit then
         PhysicsConstants.albedo_crit
@@ -878,19 +674,19 @@ calcul_albedo sv zphig =
 
 calcul_zpuit_bio : SimulationValues -> Float
 calcul_zpuit_bio sv =
-    if sv.fixed_concentration then
+    if sv.parameters.fixed_concentration then
         0
 
-    else if sv.debranche_biologie then
+    else if sv.parameters.debranche_biologie then
         0
 
     else
-        sv.puit_bio_value / 100
+        sv.parameters.puit_bio_value / 100
 
 
 calcul_zpuit_oce : SimulationValues -> State -> Float
-calcul_zpuit_oce sv { zT, zpuit_oce } =
-    if sv.fixed_concentration || sv.debranche_ocean || sv.fixed_ocean then
+calcul_zpuit_oce sv (State { zT, zpuit_oce }) =
+    if sv.parameters.fixed_concentration || sv.parameters.debranche_ocean || sv.parameters.fixed_ocean then
         zpuit_oce
 
     else
@@ -904,7 +700,7 @@ calcul_zpuit_oce sv { zT, zpuit_oce } =
 
 
 calcul_zB_ocean : State -> Float
-calcul_zB_ocean previousState =
+calcul_zB_ocean (State previousState) =
     calcul_zC_alteration previousState.b_ocean previousState.zphig
 
 
@@ -921,7 +717,7 @@ calcul_zC_alteration cmax zphig =
 
 
 calcul_zphig : SimulationValues -> State -> Float -> Float
-calcul_zphig sv previousState tau_niveau_calottes =
+calcul_zphig sv (State previousState) tau_niveau_calottes =
     calculT (calcul_phieq sv previousState.zT) previousState.zphig tau_niveau_calottes dt
         |> max 0
         |> min 90
@@ -961,15 +757,15 @@ calcul_phieq sv zT =
 
 calcul_alteration_max : SimulationValues -> Float
 calcul_alteration_max sv =
-    PhysicsConstants.c_alteration_naturel * (sv.alteration_value / 100.0)
+    PhysicsConstants.c_alteration_naturel * (sv.parameters.alteration_value / 100.0)
 
 
 calcul_b_ocean : SimulationValues -> Float
 calcul_b_ocean sv =
-    if sv.debranche_ocean then
+    if sv.parameters.debranche_ocean then
         0
 
-    else if sv.fixed_ocean then
+    else if sv.parameters.fixed_ocean then
         0
 
     else
@@ -991,9 +787,9 @@ insol65N sv =
                         * sin (-PhysicsConstants.precession_actuel / 180 * pi)
                      )
                         / (1
-                            - (0.3 * sv.excentricite_value + 0.7 * PhysicsConstants.excentricite_actuel)
+                            - (0.3 * sv.parameters.excentricite_value + 0.7 * PhysicsConstants.excentricite_actuel)
                             * 0.5
-                            * sin (-sv.precession_value / 180 * pi)
+                            * sin (-sv.parameters.precession_value / 180 * pi)
                           )
                     )
             )
@@ -1002,7 +798,7 @@ insol65N sv =
 delta_angle : SimulationValues -> Float
 delta_angle sv =
     abs
-        ((toFloat PhysicsConstants.lat_Mil - sv.obliquite_value)
+        ((toFloat PhysicsConstants.lat_Mil - sv.parameters.obliquite_value)
             / 360
             * 2
             * PhysicsConstants.pi
@@ -1012,9 +808,9 @@ delta_angle sv =
 calcul_fin0 : SimulationValues -> Float
 calcul_fin0 sv =
     PhysicsConstants.puissance_recue_zero
-        * (sv.puissance_soleil_value / 100.0)
-        / (sv.distance_ts_value / 100)
-        / (sv.distance_ts_value / 100)
+        * (sv.parameters.puissance_soleil_value / 100.0)
+        / (sv.parameters.distance_ts_value / 100)
+        / (sv.parameters.distance_ts_value / 100)
 
 
 dt : Float
@@ -1025,40 +821,6 @@ dt =
 niter : Int
 niter =
     max 4 (truncate (3 * exp (0.3 * log (EV.temps_elem ev))))
-
-
-temperature_past_data : InitialState -> List Float
-temperature_past_data initialState =
-    (::) 0 <|
-        case initialState of
-            PreIndustrial ->
-                List.repeat n 14.399999999999977
-
-            Now ->
-                List.map temperature_past_value (List.range 1 100)
-
-
-temperature_past_value : Int -> Float
-temperature_past_value t =
-    PhysicsConstants.temperature_actuelle
-        - (tempsElem
-            / internEcheance
-            * toFloat t
-            * PhysicsConstants.deltaT_last_century
-          )
-        -- FIXME: converting to then from kelvins introduces rounding errors
-        + PhysicsConstants.tKelvin
-        - PhysicsConstants.tKelvin
-
-
-tempsElem : Float
-tempsElem =
-    1.0
-
-
-internEcheance : Float
-internEcheance =
-    100.0
 
 
 simulate : SimulationValues -> SimulationValues

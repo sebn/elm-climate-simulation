@@ -1,12 +1,11 @@
 module ClimateSimulation exposing
     ( ClimateSimulation
     , fromSimClimat
-    , simulate
+    , run
     , toSimClimat
     )
 
-import ClimateSimulation.Duration as Duration exposing (Duration)
-import ClimateSimulation.Math exposing (exp, log)
+import ClimateSimulation.Duration as Duration
 import ClimateSimulation.Parameters as Parameters exposing (Parameters)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
 import ClimateSimulation.State as State exposing (State(..))
@@ -23,79 +22,43 @@ type alias ClimateSimulation =
     }
 
 
-fromSimClimat : JD.Value -> Result JD.Error ClimateSimulation
-fromSimClimat json =
-    JD.decodeValue simulationValuesDecoder json
+run : ClimateSimulation -> ClimateSimulation
+run simulation =
+    let
+        initialState =
+            State.initial simulation.parameters
+    in
+    { simulation
+        | results =
+            List.range 1 n
+                |> List.foldl
+                    (prependNextState simulation.parameters)
+                    (NEList.fromElement initialState)
+                |> NEList.reverse
+                |> NEList.tail
+                |> (::) initialState
+    }
 
 
-toSimClimat : ClimateSimulation -> JE.Value
-toSimClimat simulation =
-    JE.object <|
-        List.concat
-            [ [ ( "simulation_name", JE.string simulation.name )
-              , ( "ID_MIN", JE.int 0 )
-              , ( "ID_MAX", JE.int n )
-              , ( "TEMPS_ELEM", JE.int 1 )
-              , ( "INTERN_ECHEANCE", JE.int 100 )
-              ]
-            , Parameters.toSimClimatFields simulation.parameters
-            , [ ( "temperature_data"
-                , toSimClimatDataArray
-                    { data = List.map State.temperature simulation.results
-                    , pastData = Parameters.temperature_past_data simulation.parameters
-                    }
-                )
-              , ( "concentrations_coo_data"
-                , toSimClimatDataArray
-                    { data = List.map State.co2Concentration simulation.results
-                    , pastData = []
-                    }
-                )
-              , ( "niveau_calottes_data"
-                , toSimClimatDataArray
-                    { data = List.map State.iceCap simulation.results
-                    , pastData = []
-                    }
-                )
-              , ( "emissions_coo_data"
-                , toSimClimatDataArray
-                    { data = emissions_coo_data simulation |> duplicateLast
-                    , pastData = []
-                    }
-                )
-              , ( "albedo_data"
-                , toSimClimatDataArray
-                    { data = albedo_data simulation
-                    , pastData = []
-                    }
-                )
-              , ( "niveau_mer_data"
-                , toSimClimatDataArray
-                    { data = niveau_mer_data simulation
-                    , pastData = []
-                    }
-                )
-              , ( "modelPhysicsConstants", PhysicsConstants.toSimClimat )
-              , ( "modelVarsConstants"
-                , JE.object
-                    [ ( "modelConstants", simClimatModelConstants )
-                    ]
-                )
-              ]
-            ]
+n : Int
+n =
+    100
 
 
-duplicateLast : List a -> List a
-duplicateLast items =
-    case items of
-        [] ->
-            items
+prependNextState : Parameters -> Int -> NEList.Nonempty State -> NEList.Nonempty State
+prependNextState parameters t previousStates =
+    let
+        previousState =
+            NEList.head previousStates
 
-        [ x ] ->
-            [ x, x ]
+        nextState =
+            State.next parameters t previousState
+    in
+    NEList.cons nextState previousStates
 
-        first :: rest ->
-            first :: duplicateLast rest
+
+
+-- RESULTS
 
 
 albedo_data : ClimateSimulation -> List Float
@@ -120,60 +83,6 @@ calcul_emission_coo sv previousState state =
             - State.co2Concentration previousState
         )
             / Duration.temps_elem sv.parameters.duration
-
-
-simulationValuesDecoder : JD.Decoder ClimateSimulation
-simulationValuesDecoder =
-    JD.succeed ClimateSimulation
-        |> JDP.required "simulation_name" JD.string
-        |> JDP.custom Parameters.simClimatDecoder
-        |> JDP.hardcoded []
-
-
-toSimClimatDataArray : { data : List Float, pastData : List Float } -> JE.Value
-toSimClimatDataArray { data, pastData } =
-    JE.object
-        [ ( "N", JE.int n )
-        , ( "datas", JE.list JE.float data )
-        , ( "past_datas", JE.list JE.float pastData )
-        , ( "resolution", JE.int n )
-        , ( "indice_min", JE.int 0 )
-        , ( "indice_max", JE.int n )
-        , ( "imin", JE.int 0 )
-        , ( "imax", JE.int n )
-        ]
-
-
-n : Int
-n =
-    100
-
-
-boucleT : Parameters -> List State
-boucleT parameters =
-    let
-        initialState =
-            State.initial parameters
-    in
-    List.range 1 n
-        |> List.foldl
-            (prependNextResult parameters)
-            (NEList.fromElement initialState)
-        |> NEList.reverse
-        |> NEList.tail
-        |> (::) initialState
-
-
-prependNextResult : Parameters -> Int -> NEList.Nonempty State -> NEList.Nonempty State
-prependNextResult parameters t previousStates =
-    let
-        previousState =
-            NEList.head previousStates
-
-        nextState =
-            State.next parameters t previousState
-    in
-    NEList.cons nextState previousStates
 
 
 niveau_mer_data : ClimateSimulation -> List Float
@@ -245,9 +154,105 @@ calcul_niveau_mer sv t (State { zphig, zT }) =
         hmer - PhysicsConstants.hmeract
 
 
-simulate : ClimateSimulation -> ClimateSimulation
-simulate simulation =
-    { simulation | results = boucleT simulation.parameters }
+
+-- SIMCLIMAT
+
+
+fromSimClimat : JD.Value -> Result JD.Error ClimateSimulation
+fromSimClimat json =
+    JD.decodeValue simulationValuesDecoder json
+
+
+simulationValuesDecoder : JD.Decoder ClimateSimulation
+simulationValuesDecoder =
+    JD.succeed ClimateSimulation
+        |> JDP.required "simulation_name" JD.string
+        |> JDP.custom Parameters.simClimatDecoder
+        |> JDP.hardcoded []
+
+
+toSimClimat : ClimateSimulation -> JE.Value
+toSimClimat simulation =
+    JE.object <|
+        List.concat
+            [ [ ( "simulation_name", JE.string simulation.name )
+              , ( "ID_MIN", JE.int 0 )
+              , ( "ID_MAX", JE.int n )
+              , ( "TEMPS_ELEM", JE.int 1 )
+              , ( "INTERN_ECHEANCE", JE.int 100 )
+              ]
+            , Parameters.toSimClimatFields simulation.parameters
+            , [ ( "temperature_data"
+                , toSimClimatDataArray
+                    { data = List.map State.temperature simulation.results
+                    , pastData = Parameters.temperature_past_data simulation.parameters
+                    }
+                )
+              , ( "concentrations_coo_data"
+                , toSimClimatDataArray
+                    { data = List.map State.co2Concentration simulation.results
+                    , pastData = []
+                    }
+                )
+              , ( "niveau_calottes_data"
+                , toSimClimatDataArray
+                    { data = List.map State.iceCap simulation.results
+                    , pastData = []
+                    }
+                )
+              , ( "emissions_coo_data"
+                , toSimClimatDataArray
+                    { data = emissions_coo_data simulation |> duplicateLast
+                    , pastData = []
+                    }
+                )
+              , ( "albedo_data"
+                , toSimClimatDataArray
+                    { data = albedo_data simulation
+                    , pastData = []
+                    }
+                )
+              , ( "niveau_mer_data"
+                , toSimClimatDataArray
+                    { data = niveau_mer_data simulation
+                    , pastData = []
+                    }
+                )
+              , ( "modelPhysicsConstants", PhysicsConstants.toSimClimat )
+              , ( "modelVarsConstants"
+                , JE.object
+                    [ ( "modelConstants", simClimatModelConstants )
+                    ]
+                )
+              ]
+            ]
+
+
+toSimClimatDataArray : { data : List Float, pastData : List Float } -> JE.Value
+toSimClimatDataArray { data, pastData } =
+    JE.object
+        [ ( "N", JE.int n )
+        , ( "datas", JE.list JE.float data )
+        , ( "past_datas", JE.list JE.float pastData )
+        , ( "resolution", JE.int n )
+        , ( "indice_min", JE.int 0 )
+        , ( "indice_max", JE.int n )
+        , ( "imin", JE.int 0 )
+        , ( "imax", JE.int n )
+        ]
+
+
+duplicateLast : List a -> List a
+duplicateLast items =
+    case items of
+        [] ->
+            items
+
+        [ x ] ->
+            [ x, x ]
+
+        first :: rest ->
+            first :: duplicateLast rest
 
 
 simClimatModelConstants : JE.Value

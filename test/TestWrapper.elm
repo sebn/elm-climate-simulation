@@ -38,7 +38,7 @@ update msg _ =
                 case ClimateSimulation.fromSimClimat json of
                     Ok sv ->
                         sv
-                            |> ClimateSimulation.simulate
+                            |> ClimateSimulation.run
                             |> ClimateSimulation.toSimClimat
 
                     Err err ->

@@ -149,35 +149,32 @@ n =
     100
 
 
-boucleT : ClimateSimulation -> List State
-boucleT sv =
+boucleT : Parameters -> List State
+boucleT parameters =
     let
         initialState =
-            computeInitialState sv
+            computeInitialState parameters
     in
     List.range 1 n
         |> List.foldl
-            (prependNextResult sv)
+            (prependNextResult parameters)
             (NEList.fromElement initialState)
         |> NEList.reverse
         |> NEList.tail
         |> (::) initialState
 
 
-computeInitialState : ClimateSimulation -> State
-computeInitialState sv =
+computeInitialState : Parameters -> State
+computeInitialState parameters =
     let
-        parameters =
-            sv.parameters
-
         zT0 =
-            Parameters.zT0 sv.parameters
+            Parameters.zT0 parameters
 
         zphig0 =
-            Parameters.zphig0 sv.parameters
+            Parameters.zphig0 parameters
 
         zCO2 =
-            sv.parameters.coo_concentr_value
+            parameters.coo_concentr_value
     in
     State
         { alteration_max = Parameters.alteration_max parameters
@@ -190,8 +187,8 @@ computeInitialState sv =
         , g = 0
         , insol65N = Parameters.insol65N parameters
         , oscillation = 0
-        , phieq = calcul_phieq sv zT0
-        , tau_niveau_calottes = calcul_tau_niveau_calottes sv 0
+        , phieq = calcul_phieq parameters zT0
+        , tau_niveau_calottes = calcul_tau_niveau_calottes parameters 0
         , zB_ocean = 0
         , zC_alteration = 0
         , zC_stockage = 0
@@ -201,25 +198,25 @@ computeInitialState sv =
         , zT = zT0
         , zT_ancien = zT0
         , zTeq = 0
-        , zalbedo = calcul_albedo sv zphig0
+        , zalbedo = calcul_albedo parameters zphig0
         , zphig = zphig0
         , zphig_ancien = zphig0
         , zpuit_bio = Parameters.zpuit_bio parameters
         , zpuit_oce = Parameters.zpuit_oce0 parameters
-        , zrapport_H2O = calcul_rapport_H2O sv zT0
+        , zrapport_H2O = calcul_rapport_H2O parameters zT0
         , zsomme_C = 0
         , zsomme_flux_const = 0
         }
 
 
-prependNextResult : ClimateSimulation -> Int -> NEList.Nonempty State -> NEList.Nonempty State
-prependNextResult sv t previousStates =
+prependNextResult : Parameters -> Int -> NEList.Nonempty State -> NEList.Nonempty State
+prependNextResult parameters t previousStates =
     let
         previousState =
             NEList.head previousStates
 
         nextState =
-            computeNextResult sv t previousState
+            computeNextResult parameters t previousState
     in
     NEList.cons nextState previousStates
 
@@ -229,16 +226,16 @@ ev =
     Duration.fromYears 10000
 
 
-computeNextResult : ClimateSimulation -> Int -> State -> State
-computeNextResult sv t (State previous) =
+computeNextResult : Parameters -> Int -> State -> State
+computeNextResult parameters t (State previous) =
     List.range 1 niter
         |> List.foldl
-            (computeNextIntermediateState sv t)
+            (computeNextIntermediateState parameters t)
             (State { previous | oscillation = 0 })
 
 
-computeNextIntermediateState : ClimateSimulation -> Int -> Int -> State -> State
-computeNextIntermediateState sv t iter (State previousState) =
+computeNextIntermediateState : Parameters -> Int -> Int -> State -> State
+computeNextIntermediateState parameters t iter (State previousState) =
     let
         debug : String -> value -> value
         debug msg =
@@ -248,28 +245,28 @@ computeNextIntermediateState sv t iter (State previousState) =
             identity
 
         tau_niveau_calottes =
-            calcul_tau_niveau_calottes sv t
+            calcul_tau_niveau_calottes parameters t
 
         zphig_raw =
-            calcul_zphig sv (State previousState) tau_niveau_calottes
+            calcul_zphig parameters (State previousState) tau_niveau_calottes
 
         zalbedo =
-            calcul_albedo sv zphig_raw
+            calcul_albedo parameters zphig_raw
 
         zC_alteration =
             calcul_zC_alteration previousState.alteration_max previousState.zphig
 
         zpuit_oce =
-            calcul_zpuit_oce sv (State previousState)
+            calcul_zpuit_oce parameters (State previousState)
 
         zC_stockage =
-            calcul_zC_stockage sv previousState.zphig
+            calcul_zC_stockage parameters previousState.zphig
 
         zB_ocean =
             calcul_zB_ocean (State previousState)
 
         zsomme_flux_const =
-            calcul_zsomme_flux_const sv zpuit_oce previousState.zpuit_bio zB_ocean previousState.zT
+            calcul_zsomme_flux_const parameters zpuit_oce previousState.zpuit_bio zB_ocean previousState.zT
 
         zsomme_C =
             calcul_zsomme_C zpuit_oce previousState.zpuit_bio zC_alteration zC_stockage zB_ocean
@@ -281,10 +278,10 @@ computeNextIntermediateState sv t iter (State previousState) =
             calcul_emission_coo_ppm zsomme_flux
 
         zCO2_raw =
-            calcul_zCO2 sv (State previousState) emission_coo_ppm dt
+            calcul_zCO2 parameters (State previousState) emission_coo_ppm dt
 
         zrapport_H2O =
-            calcul_rapport_H2O sv previousState.zT
+            calcul_rapport_H2O parameters previousState.zT
 
         forcage_serre_eau =
             calcul_forcage_serre_H2O zrapport_H2O
@@ -299,7 +296,7 @@ computeNextIntermediateState sv t iter (State previousState) =
             calcul_G forcage_serre
 
         fin =
-            calcul_fin sv zalbedo
+            calcul_fin parameters zalbedo
 
         zTeq =
             calcul_zTeq fin g
@@ -308,10 +305,10 @@ computeNextIntermediateState sv t iter (State previousState) =
             calcul_zT zTeq previousState.zT dt
 
         oscillation =
-            calcul_oscillation sv iter (State previousState) zT_raw zCO2_raw
+            calcul_oscillation parameters iter (State previousState) zT_raw zCO2_raw
 
         zCO2 =
-            if oscillation == 1 && not sv.parameters.fixed_concentration then
+            if oscillation == 1 && not parameters.fixed_concentration then
                 (zCO2_raw + previousState.zCO2 + 0.5 * previousState.zCO2_prec) / 2.5
 
             else
@@ -333,14 +330,14 @@ computeNextIntermediateState sv t iter (State previousState) =
     in
     State
         { previousState
-            | fdegaz = calcul_fdegaz sv previousState.zT
+            | fdegaz = calcul_fdegaz parameters previousState.zT
             , fin = fin
             , forcage_serre = forcage_serre
             , forcage_serre_CO2 = forcage_serre_CO2
             , forcage_serre_eau = forcage_serre_eau
             , g = g
             , oscillation = oscillation
-            , phieq = calcul_phieq sv previousState.zT
+            , phieq = calcul_phieq parameters previousState.zT
             , tau_niveau_calottes = tau_niveau_calottes
             , zB_ocean = zB_ocean
             , zC_alteration = zC_alteration
@@ -430,8 +427,8 @@ calcul_niveau_mer sv t (State { zphig, zT }) =
         hmer - PhysicsConstants.hmeract
 
 
-calcul_oscillation : ClimateSimulation -> Int -> State -> Float -> Float -> Int
-calcul_oscillation sv iter (State previous) zT zCO2 =
+calcul_oscillation : Parameters -> Int -> State -> Float -> Float -> Int
+calcul_oscillation parameters iter (State previous) zT zCO2 =
     let
         oscillation =
             if (iter >= 3) && (previous.oscillation == 0) then
@@ -457,7 +454,7 @@ calcul_oscillation sv iter (State previous) zT zCO2 =
             else
                 previous.oscillation
     in
-    if sv.parameters.fixed_concentration then
+    if parameters.fixed_concentration then
         oscillation
 
     else if (iter >= 3) && (oscillation == 0) then
@@ -554,10 +551,10 @@ calcul_forcage_serre_H2O zrapport_H2O =
         PhysicsConstants.a_H2O
 
 
-calcul_rapport_H2O : ClimateSimulation -> Float -> Float
-calcul_rapport_H2O sv zT =
-    if sv.parameters.fixed_eau then
-        sv.parameters.rapport_H2O_value / 100
+calcul_rapport_H2O : Parameters -> Float -> Float
+calcul_rapport_H2O parameters zT =
+    if parameters.fixed_eau then
+        parameters.rapport_H2O_value / 100
 
     else
         -- utilisation de la formule de Rankine donnant Psat
@@ -573,10 +570,10 @@ calcul_rapport_H2O sv zT =
                 )
 
 
-calcul_zCO2 : ClimateSimulation -> State -> Float -> Float -> Float
-calcul_zCO2 sv previousState emission_coo_ppm dt_ =
-    if sv.parameters.fixed_concentration then
-        sv.parameters.coo_concentr_value
+calcul_zCO2 : Parameters -> State -> Float -> Float -> Float
+calcul_zCO2 parameters previousState emission_coo_ppm dt_ =
+    if parameters.fixed_concentration then
+        parameters.coo_concentr_value
 
     else
         max 0 <|
@@ -592,14 +589,14 @@ calcul_emission_coo_ppm zsomme_flux =
     zsomme_flux * (PhysicsConstants.concentration_coo_actuel / PhysicsConstants.coo_Gt_act)
 
 
-calcul_zsomme_flux_const : ClimateSimulation -> Float -> Float -> Float -> Float -> Float
-calcul_zsomme_flux_const sv zpuit_oce zpuit_bio zB_ocean zT_ancien =
+calcul_zsomme_flux_const : Parameters -> Float -> Float -> Float -> Float -> Float
+calcul_zsomme_flux_const parameters zpuit_oce zpuit_bio zB_ocean zT_ancien =
     max 0 (min 1 (1 - zpuit_oce - zpuit_bio))
-        * (sv.parameters.emit_anthro_coo_value + sv.parameters.volcan_value)
+        * (parameters.emit_anthro_coo_value + parameters.volcan_value)
         + max 0 (min 1 (1 - zpuit_bio))
         * zB_ocean
         * calcul_zCO2eq_oce zT_ancien
-        + calcul_fdegaz sv zT_ancien
+        + calcul_fdegaz parameters zT_ancien
 
 
 calcul_zCO2eq_oce : Float -> Float
@@ -625,9 +622,9 @@ calcul_zCO2eq_oce zT =
         + max 0 (5 * (zT - PhysicsConstants.tKelvin - c))
 
 
-calcul_fdegaz : ClimateSimulation -> Float -> Float
-calcul_fdegaz sv zT =
-    if sv.parameters.debranche_ocean || sv.parameters.fixed_ocean then
+calcul_fdegaz : Parameters -> Float -> Float
+calcul_fdegaz parameters zT =
+    if parameters.debranche_ocean || parameters.fixed_ocean then
         0
 
     else if zT - PhysicsConstants.tKelvin > PhysicsConstants.tcrit_oce then
@@ -645,22 +642,22 @@ calcul_zsomme_C zpuit_oce zpuit_bio zC_alteration zC_stockage zB_ocean =
         * zB_ocean
 
 
-calcul_zC_stockage : ClimateSimulation -> Float -> Float
-calcul_zC_stockage sv zphig_ancien =
+calcul_zC_stockage : Parameters -> Float -> Float
+calcul_zC_stockage parameters zphig_ancien =
     calcul_zC_alteration
-        (-sv.parameters.stockage_biologique_value * 1.0e-3)
+        (-parameters.stockage_biologique_value * 1.0e-3)
         zphig_ancien
 
 
-calcul_fin : ClimateSimulation -> Float -> Float
-calcul_fin sv zalbedo =
-    Parameters.fin0 sv.parameters * (1 - zalbedo)
+calcul_fin : Parameters -> Float -> Float
+calcul_fin parameters zalbedo =
+    Parameters.fin0 parameters * (1 - zalbedo)
 
 
-calcul_albedo : ClimateSimulation -> Float -> Float
-calcul_albedo sv zphig =
-    if sv.parameters.fixed_albedo then
-        sv.parameters.albedo_value / 100
+calcul_albedo : Parameters -> Float -> Float
+calcul_albedo parameters zphig =
+    if parameters.fixed_albedo then
+        parameters.albedo_value / 100
 
     else if zphig > PhysicsConstants.phig_crit then
         PhysicsConstants.albedo_crit
@@ -675,9 +672,9 @@ calcul_albedo sv zphig =
             * (PhysicsConstants.albedo_crit - PhysicsConstants.albedo_glace_const)
 
 
-calcul_zpuit_oce : ClimateSimulation -> State -> Float
-calcul_zpuit_oce sv (State { zT, zpuit_oce }) =
-    if sv.parameters.fixed_concentration || sv.parameters.debranche_ocean || sv.parameters.fixed_ocean then
+calcul_zpuit_oce : Parameters -> State -> Float
+calcul_zpuit_oce parameters (State { zT, zpuit_oce }) =
+    if parameters.fixed_concentration || parameters.debranche_ocean || parameters.fixed_ocean then
         zpuit_oce
 
     else
@@ -707,9 +704,9 @@ calcul_zC_alteration cmax zphig =
         0.0
 
 
-calcul_zphig : ClimateSimulation -> State -> Float -> Float
-calcul_zphig sv (State previousState) tau_niveau_calottes =
-    calculT (calcul_phieq sv previousState.zT) previousState.zphig tau_niveau_calottes dt
+calcul_zphig : Parameters -> State -> Float -> Float
+calcul_zphig parameters (State previousState) tau_niveau_calottes =
+    calculT (calcul_phieq parameters previousState.zT) previousState.zphig tau_niveau_calottes dt
         |> max 0
         |> min 90
 
@@ -719,26 +716,26 @@ calculT tEq tPrec tau dt_ =
     tPrec + (tEq - tPrec) * (1 - exp (-dt_ / tau))
 
 
-calcul_tau_niveau_calottes : ClimateSimulation -> Int -> Float
-calcul_tau_niveau_calottes sv t =
+calcul_tau_niveau_calottes : Parameters -> Int -> Float
+calcul_tau_niveau_calottes parameters t =
     -- let
     --     -- FIXME
     --     zphig_ancien =
     --         50.0
     -- in
-    -- if zphig_ancien < phieq sv t then
+    -- if zphig_ancien < calcul_phieq parameters t then
     --     PhysicsConstants.tau_niveau_calottes_deglacement
     -- else
     PhysicsConstants.tau_niveau_calottes_englacement
 
 
-calcul_phieq : ClimateSimulation -> Float -> Float
-calcul_phieq sv zT =
+calcul_phieq : Parameters -> Float -> Float
+calcul_phieq parameters zT =
     (PhysicsConstants.a_calottes
         * (zT - PhysicsConstants.tKelvin)
         + PhysicsConstants.b_calottes
         + PhysicsConstants.c_calottes
-        * (Parameters.insol65N sv.parameters
+        * (Parameters.insol65N parameters
             - PhysicsConstants.insol_actuel
           )
     )
@@ -757,8 +754,8 @@ niter =
 
 
 simulate : ClimateSimulation -> ClimateSimulation
-simulate config =
-    { config | results = boucleT config }
+simulate simulation =
+    { simulation | results = boucleT simulation.parameters }
 
 
 simClimatModelConstants : JE.Value

@@ -126,16 +126,16 @@ initial parameters =
 -- NEXT STATE
 
 
-next : Parameters -> Int -> State -> State
-next parameters t (State previous) =
+next : Parameters -> State -> State
+next parameters (State previous) =
     List.range 1 niter
         |> List.foldl
-            (nextIntermediate parameters t)
+            (nextIntermediate parameters)
             (State { previous | oscillation = 0 })
 
 
-nextIntermediate : Parameters -> Int -> Int -> State -> State
-nextIntermediate parameters t iter (State previous) =
+nextIntermediate : Parameters -> Int -> State -> State
+nextIntermediate parameters iter (State previous) =
     let
         phieq =
             calcul_phieq parameters previous.zT

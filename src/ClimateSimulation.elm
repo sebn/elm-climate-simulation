@@ -32,7 +32,7 @@ run simulation =
         | results =
             List.range 1 n
                 |> List.foldl
-                    (prependNextState simulation.parameters)
+                    (always <| prependNextState simulation.parameters)
                     (NEList.fromElement initialState)
                 |> NEList.reverse
                 |> NEList.tail
@@ -45,14 +45,14 @@ n =
     100
 
 
-prependNextState : Parameters -> Int -> NEList.Nonempty State -> NEList.Nonempty State
-prependNextState parameters t previousStates =
+prependNextState : Parameters -> NEList.Nonempty State -> NEList.Nonempty State
+prependNextState parameters previousStates =
     let
         previousState =
             NEList.head previousStates
 
         nextState =
-            State.next parameters t previousState
+            State.next parameters previousState
     in
     NEList.cons nextState previousStates
 

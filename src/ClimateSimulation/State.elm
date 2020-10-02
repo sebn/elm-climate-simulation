@@ -1,7 +1,5 @@
 module ClimateSimulation.State exposing
-    (  -- FIXME: Make State opaque
-       State(..)
-
+    ( State
     , albedoPercentage
     , co2Concentration
     , iceCap

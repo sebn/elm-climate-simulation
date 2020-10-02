@@ -8,7 +8,7 @@ module ClimateSimulation exposing
 import ClimateSimulation.Duration as Duration
 import ClimateSimulation.Parameters as Parameters exposing (Parameters)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
-import ClimateSimulation.State as State exposing (State(..))
+import ClimateSimulation.State as State exposing (State)
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Json.Encode as JE
@@ -91,12 +91,18 @@ niveau_mer_data sv =
 
 
 calcul_niveau_mer : ClimateSimulation -> Int -> State -> Float
-calcul_niveau_mer sv t (State { zphig, zT }) =
+calcul_niveau_mer sv t state =
     if t == 0 then
         Parameters.niveau_mer0 sv.parameters
 
     else
         let
+            zT =
+                State.temperature state
+
+            zphig =
+                State.iceCap state
+
             -- tau_niveau_mer est en année, il faut diviser par temps_elem pour
             -- l'avoir en nombre de pas.
             --

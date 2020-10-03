@@ -246,7 +246,7 @@ simClimatDecoder : JD.Decoder Parameters
 simClimatDecoder =
     JD.succeed Parameters
         |> JDP.required "annee_debut" initialStateDecoder
-        |> JDP.hardcoded (Duration.fromYears 10000)
+        |> JDP.custom durationDecoder
         |> JDP.required "fixed_eau" JD.bool
         |> JDP.required "fixed_concentration" JD.bool
         |> JDP.required "debranche_biologie" JD.bool
@@ -267,6 +267,28 @@ simClimatDecoder =
         |> JDP.required "emit_anthro_coo_value" JD.float
         |> JDP.required "volcan_value" JD.float
         |> JDP.required "stockage_biologique_value" JD.float
+
+
+durationDecoder : JD.Decoder Duration
+durationDecoder =
+    JD.oneOf
+        [ yearRangeDecoder |> JD.andThen durationDecoderFromYearRange
+        , JD.succeed (Duration.fromYears 10000)
+        ]
+
+
+yearRangeDecoder : JD.Decoder ( Int, Int )
+yearRangeDecoder =
+    JD.map2 Tuple.pair
+        (JD.field "annee_debut" JD.int)
+        (JD.field "annee_fin" JD.int)
+
+
+durationDecoderFromYearRange : ( Int, Int ) -> JD.Decoder Duration
+durationDecoderFromYearRange ( annee_debut, annee_fin ) =
+    (annee_fin - annee_debut)
+        |> Duration.fromYears
+        |> JD.succeed
 
 
 toSimClimatFields : Parameters -> List ( String, JE.Value )

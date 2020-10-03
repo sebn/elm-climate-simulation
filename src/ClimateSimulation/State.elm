@@ -128,7 +128,7 @@ initial parameters =
 
 next : Parameters -> State -> State
 next parameters (State previous) =
-    List.range 1 niter
+    List.range 1 (Duration.niter parameters.duration)
         |> List.foldl
             (nextIntermediate parameters)
             (State { previous | oscillation = 0 })
@@ -137,6 +137,9 @@ next parameters (State previous) =
 nextIntermediate : Parameters -> Int -> State -> State
 nextIntermediate parameters iter (State previous) =
     let
+        dt =
+            Duration.dt parameters.duration
+
         phieq =
             calcul_phieq parameters previous.zT
 
@@ -533,7 +536,7 @@ calcul_zC_alteration cmax zphig =
 
 calcul_zphig : Parameters -> State -> Float -> Float
 calcul_zphig parameters (State previous) tau_niveau_calottes =
-    calculT (calcul_phieq parameters previous.zT) previous.zphig tau_niveau_calottes dt
+    calculT (calcul_phieq parameters previous.zT) previous.zphig tau_niveau_calottes (Duration.dt parameters.duration)
         |> max 0
         |> min 90
 
@@ -564,21 +567,6 @@ calcul_phieq parameters zT =
     )
         |> min PhysicsConstants.niveau_calottes_max
         |> max PhysicsConstants.niveau_calottes_min
-
-
-dt : Float
-dt =
-    Duration.temps_elem ev / toFloat niter
-
-
-niter : Int
-niter =
-    max 4 (truncate (3 * exp (0.3 * log (Duration.temps_elem ev))))
-
-
-ev : Duration
-ev =
-    Duration.fromYears 10000
 
 
 

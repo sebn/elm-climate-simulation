@@ -22,6 +22,13 @@ test('pre-industrial', async () => {
     await assertSameResultsAsync(sv);
 });
 
+test('pre-industrial, echeance=500', async () => {
+    const sv = new CSimulationValues();
+    sv.create_1750_state();
+    // logSimulationValues(sv);
+    await assertSameResultsAsync(sv, 500);
+});
+
 test('pre-industrial, fixed concentration', async () => {
     const sv = new CSimulationValues();
     sv.create_1750_state();
@@ -194,20 +201,18 @@ test('actual, stockage_biologique_value', async () => {
     await assertSameResultsAsync(sv);
 });
 
-var assertSameResultsAsync = async sv => {
-    const elmResult = await runElmClimateAsync(sv);
+var assertSameResultsAsync = async (sv, years = 10000) => {
+    const simClimatResult = runSimClimat(sv, years);
+    const elmResult = await runElmClimateAsync(sv, years);
 
     if (typeof elmResult == 'string') {
         assert.fail(elmResult);
     } else {
-        assert.deepEqual(
-            runSimClimat(sv),
-            elmResult
-        );
+        assert.deepEqual(simClimatResult, elmResult);
     }
 };
 
-var runElmClimateAsync = sv =>
+var runElmClimateAsync = (sv, years) =>
     new Promise((resolve, reject) => {
         let unsubscribe;
         try {
@@ -216,6 +221,7 @@ var runElmClimateAsync = sv =>
             });
             elmTestWrapper.ports.input.send({
                 ...sv,
+                annee_fin: sv.annee_debut + years,
                 temperature_data: {
                     datas: [],
                     past_datas: [],
@@ -235,8 +241,7 @@ var runElmClimateAsync = sv =>
         }
     });
 
-var runSimClimat = sv => {
-    const years /*: numbers */ = 10000;
+var runSimClimat = (sv, years) => {
     // const sv /*: CSimulationValues */ = new CSimulationValues();
     const ev /*: CExperienceValues */ = new CExperienceValues(years);
     const m /*: CModel */ = new CModel();
@@ -259,6 +264,11 @@ var logSimulationValues = sv => {
     return sv;
 }
 
-var normalizeSimulationValues = _.identity;
+var normalizeSimulationValues = sv => {
+    sv = _.cloneDeep(sv);
+    // FIXME: Honor echeance/years in niveau_mer_data
+    delete sv['niveau_mer_data'];
+    return sv
+};
 
 test.run();

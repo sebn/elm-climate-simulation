@@ -5,7 +5,7 @@ module ClimateSimulation exposing
     , toSimClimat
     )
 
-import ClimateSimulation.Duration as Duration
+import ClimateSimulation.Duration as Duration exposing (Duration)
 import ClimateSimulation.Parameters as Parameters exposing (Parameters)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
 import ClimateSimulation.State as State exposing (State)
@@ -30,7 +30,7 @@ run simulation =
     in
     { simulation
         | results =
-            List.range 1 n
+            List.range 1 (Duration.indice_max simulation.parameters.duration)
                 |> List.foldl
                     (always <| prependNextState simulation.parameters)
                     (NEList.fromElement initialState)
@@ -192,36 +192,42 @@ toSimClimat simulation =
                 , toSimClimatDataArray
                     { data = List.map State.temperature simulation.results
                     , pastData = Parameters.temperature_past_data simulation.parameters
+                    , duration = simulation.parameters.duration
                     }
                 )
               , ( "concentrations_coo_data"
                 , toSimClimatDataArray
                     { data = List.map State.co2Concentration simulation.results
                     , pastData = []
+                    , duration = simulation.parameters.duration
                     }
                 )
               , ( "niveau_calottes_data"
                 , toSimClimatDataArray
                     { data = List.map State.iceCap simulation.results
                     , pastData = []
+                    , duration = simulation.parameters.duration
                     }
                 )
               , ( "emissions_coo_data"
                 , toSimClimatDataArray
                     { data = emissions_coo_data simulation |> duplicateLast
                     , pastData = []
+                    , duration = simulation.parameters.duration
                     }
                 )
               , ( "albedo_data"
                 , toSimClimatDataArray
                     { data = albedo_data simulation
                     , pastData = []
+                    , duration = simulation.parameters.duration
                     }
                 )
               , ( "niveau_mer_data"
                 , toSimClimatDataArray
                     { data = niveau_mer_data simulation
                     , pastData = []
+                    , duration = simulation.parameters.duration
                     }
                 )
               , ( "modelPhysicsConstants", PhysicsConstants.toSimClimat )
@@ -234,17 +240,22 @@ toSimClimat simulation =
             ]
 
 
-toSimClimatDataArray : { data : List Float, pastData : List Float } -> JE.Value
-toSimClimatDataArray { data, pastData } =
+toSimClimatDataArray :
+    { data : List Float
+    , pastData : List Float
+    , duration : Duration
+    }
+    -> JE.Value
+toSimClimatDataArray { data, pastData, duration } =
     JE.object
         [ ( "N", JE.int n )
         , ( "datas", JE.list JE.float data )
         , ( "past_datas", JE.list JE.float pastData )
-        , ( "resolution", JE.int n )
-        , ( "indice_min", JE.int 0 )
-        , ( "indice_max", JE.int n )
-        , ( "imin", JE.int 0 )
-        , ( "imax", JE.int n )
+        , ( "resolution", JE.int (Duration.resolution duration) )
+        , ( "indice_min", JE.int (Duration.indice_min duration) )
+        , ( "indice_max", JE.int (Duration.indice_max duration) )
+        , ( "imin", JE.int (Duration.indice_min duration) )
+        , ( "imax", JE.int (Duration.indice_max duration) )
         ]
 
 

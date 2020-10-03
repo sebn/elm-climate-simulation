@@ -1,15 +1,17 @@
 module ClimateSimulation.State exposing
     ( State
     , albedoPercentage
+    , celsiusTemperature
     , co2Concentration
     , iceCap
     , initial
     , next
     , temperature
+    , timeInYears
     , toJson
     )
 
-import ClimateSimulation.Duration as Duration exposing (Duration)
+import ClimateSimulation.Duration as Duration
 import ClimateSimulation.Math exposing (exp, log)
 import ClimateSimulation.Parameters as Parameters exposing (Parameters)
 import ClimateSimulation.PhysicsConstants as PhysicsConstants
@@ -47,6 +49,7 @@ type State
         , zrapport_H2O : Float
         , zsomme_C : Float
         , zsomme_flux_const : Float
+        , timeInYears : Float
         }
 
 
@@ -68,6 +71,16 @@ iceCap (State { zphig }) =
 temperature : State -> Float
 temperature (State { zT }) =
     zT
+
+
+celsiusTemperature : State -> Float
+celsiusTemperature state =
+    temperature state - PhysicsConstants.tKelvin
+
+
+timeInYears : State -> Float
+timeInYears (State state) =
+    state.timeInYears
 
 
 
@@ -119,6 +132,7 @@ initial parameters =
         , zrapport_H2O = calcul_rapport_H2O parameters zT0
         , zsomme_C = 0
         , zsomme_flux_const = 0
+        , timeInYears = toFloat <| Parameters.startYear parameters.initialState
         }
 
 
@@ -126,12 +140,17 @@ initial parameters =
 -- NEXT STATE
 
 
-next : Parameters -> State -> State
-next parameters (State previous) =
+next : Parameters -> Int -> State -> State
+next parameters t (State previous) =
     List.range 1 (Duration.niter parameters.duration)
         |> List.foldl
             (nextIntermediate parameters)
-            (State { previous | oscillation = 0 })
+            (State
+                { previous
+                    | oscillation = 0
+                    , timeInYears = toFloat <| t + Parameters.startYear parameters.initialState
+                }
+            )
 
 
 nextIntermediate : Parameters -> Int -> State -> State

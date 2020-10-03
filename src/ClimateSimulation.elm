@@ -1,5 +1,7 @@
 module ClimateSimulation exposing
     ( ClimateSimulation
+    , Co2Emission
+    , co2Emissions
     , fromSimClimat
     , run
     , toSimClimat
@@ -32,7 +34,7 @@ run simulation =
         | results =
             List.range 1 (Duration.indice_max simulation.parameters.duration)
                 |> List.foldl
-                    (always <| prependNextState simulation.parameters)
+                    (prependNextState simulation.parameters)
                     (NEList.fromElement initialState)
                 |> NEList.reverse
                 |> NEList.tail
@@ -45,14 +47,14 @@ n =
     100
 
 
-prependNextState : Parameters -> NEList.Nonempty State -> NEList.Nonempty State
-prependNextState parameters previousStates =
+prependNextState : Parameters -> Int -> NEList.Nonempty State -> NEList.Nonempty State
+prependNextState parameters t previousStates =
     let
         previousState =
             NEList.head previousStates
 
         nextState =
-            State.next parameters previousState
+            State.next parameters t previousState
     in
     NEList.cons nextState previousStates
 
@@ -68,21 +70,49 @@ albedo_data sv =
 
 emissions_coo_data : ClimateSimulation -> List Float
 emissions_coo_data sv =
-    List.map2 (calcul_emission_coo sv)
+    let
+        calcul_emission_coo : State -> State -> Float
+        calcul_emission_coo previousState state =
+            if sv.parameters.fixed_concentration then
+                0
+
+            else
+                (State.co2Concentration state
+                    - State.co2Concentration previousState
+                )
+                    / Duration.temps_elem sv.parameters.duration
+    in
+    List.map2 calcul_emission_coo
         sv.results
         (sv.results |> List.tail |> Maybe.withDefault [])
 
 
-calcul_emission_coo : ClimateSimulation -> State -> State -> Float
-calcul_emission_coo sv previousState state =
-    if sv.parameters.fixed_concentration then
-        0
+type alias Co2Emission =
+    { emissionInGtPerYear : Float
+    , timeInYears : Float
+    }
 
-    else
-        (State.co2Concentration state
-            - State.co2Concentration previousState
-        )
-            / Duration.temps_elem sv.parameters.duration
+
+co2Emissions : ClimateSimulation -> List Co2Emission
+co2Emissions sv =
+    let
+        calcul_emission_coo : State -> State -> Co2Emission
+        calcul_emission_coo previousState state =
+            { timeInYears = State.timeInYears state
+            , emissionInGtPerYear =
+                if sv.parameters.fixed_concentration then
+                    0
+
+                else
+                    (State.co2Concentration state
+                        - State.co2Concentration previousState
+                    )
+                        / Duration.temps_elem sv.parameters.duration
+            }
+    in
+    List.map2 calcul_emission_coo
+        sv.results
+        (sv.results |> List.tail |> Maybe.withDefault [])
 
 
 niveau_mer_data : ClimateSimulation -> List Float

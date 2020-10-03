@@ -1,11 +1,13 @@
 module ClimateSimulation.Parameters exposing
-    ( Parameters
+    ( InitialState(..)
+    , Parameters
     , alteration_max
     , b_ocean
     , fin0
     , insol65N
     , niveau_mer0
     , simClimatDecoder
+    , startYear
     , temperature_past_data
     , toSimClimatFields
     , zT0

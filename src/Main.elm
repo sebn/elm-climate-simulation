@@ -114,20 +114,8 @@ view model =
             [ Element.width Element.fill
             , Element.height Element.fill
             ]
-            [ row
-                [ Element.width Element.fill
-                , Background.color <| Element.rgb255 0 0 0
-                ]
-                [ el
-                    [ Element.centerX
-                    , Element.padding 10
-                    , Font.color <| Element.rgb255 255 255 255
-                    ]
-                  <|
-                    text <|
-                        "Climate Simulation: "
-                            ++ model.simulation.name
-                ]
+            [ el [ Element.width Element.fill ] <|
+                viewHeader model.simulation
             , row
                 [ Element.height Element.fill
                 , Element.width Element.fill
@@ -136,6 +124,21 @@ view model =
                 , viewCharts model.simulation
                 ]
             ]
+
+
+viewHeader : ClimateSimulation -> Element Msg
+viewHeader simulation =
+    row
+        [ Element.width Element.fill
+        , Background.color colorBlack
+        ]
+        [ el
+            [ Element.centerX
+            , Element.padding 10
+            , Font.color colorWhite
+            ]
+            (text ("Climate Simulation: " ++ simulation.name))
+        ]
 
 
 viewParameterList : Parameters -> Element Msg
@@ -352,3 +355,17 @@ viewChart config =
                 [ LineChart.line Color.red Dots.none "" config.dots
                 ]
         ]
+
+
+
+-- COLORS
+
+
+colorBlack : Element.Color
+colorBlack =
+    Element.rgb255 0 0 0
+
+
+colorWhite : Element.Color
+colorWhite =
+    Element.rgb255 255 255 255

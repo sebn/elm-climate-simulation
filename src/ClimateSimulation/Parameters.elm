@@ -3,6 +3,7 @@ module ClimateSimulation.Parameters exposing
     , Parameters
     , alteration_max
     , b_ocean
+    , default
     , fin0
     , insol65N
     , niveau_mer0
@@ -87,6 +88,33 @@ type alias Parameters =
     , emit_anthro_coo_value : Float
     , volcan_value : Float
     , stockage_biologique_value : Float
+    }
+
+
+default : Parameters
+default =
+    { initialState = Now
+    , duration = Duration.fromYears 500
+    , fixed_eau = False
+    , fixed_concentration = False
+    , debranche_biologie = False
+    , fixed_ocean = False
+    , debranche_ocean = False
+    , fixed_albedo = False
+    , rapport_H2O_value = 105.71900000000001
+    , puit_bio_value = 35
+    , puit_oce_value = 20
+    , albedo_value = 0
+    , coo_concentr_value = PhysicsConstants.concentration_coo_actuel
+    , puissance_soleil_value = 100
+    , distance_ts_value = 100
+    , obliquite_value = 23.5
+    , excentricite_value = 0.0167
+    , precession_value = 102.7
+    , alteration_value = 100
+    , emit_anthro_coo_value = 8
+    , volcan_value = 0.083
+    , stockage_biologique_value = 0
     }
 
 

@@ -2,17 +2,18 @@ module Main exposing (main)
 
 import Browser
 import ClimateSimulation exposing (ClimateSimulation)
-import ClimateSimulation.Duration as Duration exposing (Duration)
+import ClimateSimulation.Duration as Duration
 import ClimateSimulation.Parameters as Parameters exposing (Parameters)
-import ClimateSimulation.PhysicsConstants as PhysicsConstants
 import ClimateSimulation.State as State
 import Color
-import Element exposing (Element, column, el, paddingEach, row, text)
+import Element exposing (Element, column, el, row, text)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import Html.Attributes
 import LineChart as LineChart
 import LineChart.Area as Area
 import LineChart.Axis as Axis
@@ -25,6 +26,7 @@ import LineChart.Interpolation as Interpolation
 import LineChart.Junk as Junk
 import LineChart.Legends as Legends
 import LineChart.Line as Line
+import Ui.Data.ParametersForm as ParametersForm exposing (ParametersForm)
 
 
 main : Program () Model Msg
@@ -42,46 +44,44 @@ main =
 
 type alias Model =
     { simulation : ClimateSimulation
+    , editing : Maybe ParameterName
+    , parametersForm : ParametersForm
     }
+
+
+type ParameterName
+    = InitialState
+    | SimulationLength
+    | EarthSunDistance
+    | SolarPower
+    | Excentricity
+    | Obliquity
+    | Precession
+    | Co2Concentration
+    | AnthropogenicEmissions
+    | VolcanicEmissions
+    | BiologicalStorage
+    | ContinentalAlteration
+    | PlanetaryAlbedo
+    | OceanicCarbonSink
+    | VegetationCarbonSink
+    | WaterVaporConcentration
 
 
 init : Model
 init =
+    let
+        parameters =
+            Parameters.default
+    in
     { simulation =
         ClimateSimulation.run
             { name = "Test"
-            , parameters = defaultParameters
+            , parameters = parameters
             , results = []
             }
-    }
-
-
-defaultParameters : Parameters
-defaultParameters =
-    { initialState = Parameters.Now
-
-    -- , annee_debut = 2020
-    , duration = Duration.fromYears 500
-    , fixed_eau = False
-    , fixed_concentration = False
-    , debranche_biologie = False
-    , fixed_ocean = False
-    , debranche_ocean = False
-    , fixed_albedo = False
-    , rapport_H2O_value = 105.71900000000001
-    , puit_bio_value = 35
-    , puit_oce_value = 20
-    , albedo_value = 0
-    , coo_concentr_value = PhysicsConstants.concentration_coo_actuel
-    , puissance_soleil_value = 100
-    , distance_ts_value = 100
-    , obliquite_value = 23.5
-    , excentricite_value = 0.0167
-    , precession_value = 102.7
-    , alteration_value = 100
-    , emit_anthro_coo_value = 8
-    , volcan_value = 0.083
-    , stockage_biologique_value = 0
+    , parametersForm = ParametersForm.fromParameters parameters
+    , editing = Just SimulationLength
     }
 
 
@@ -91,13 +91,41 @@ defaultParameters =
 
 type Msg
     = NoOp
+    | EditParameter (Maybe ParameterName)
+    | ChangeSimulationLength String
 
 
 update : Msg -> Model -> Model
 update msg model =
+    let
+        parametersForm =
+            model.parametersForm
+    in
     case msg of
         NoOp ->
             model
+
+        EditParameter editing ->
+            { model | editing = editing }
+
+        ChangeSimulationLength simulationLength ->
+            { model | parametersForm = { parametersForm | simulationLength = simulationLength } }
+                |> updateSimulation
+
+
+updateSimulation : Model -> Model
+updateSimulation model =
+    let
+        simulation =
+            model.simulation
+
+        parameters =
+            ParametersForm.toParameters model.parametersForm simulation.parameters
+    in
+    { model
+        | simulation =
+            ClimateSimulation.run { simulation | parameters = parameters }
+    }
 
 
 
@@ -120,7 +148,8 @@ view model =
                 [ Element.height Element.fill
                 , Element.width Element.fill
                 ]
-                [ viewParameterList model.simulation.parameters
+                [ viewParameterList model
+                , viewEditing model
                 , viewCharts model.simulation
                 ]
             ]
@@ -141,12 +170,21 @@ viewHeader simulation =
         ]
 
 
-viewParameterList : Parameters -> Element Msg
-viewParameterList parameters =
+viewParameterList : Model -> Element Msg
+viewParameterList model =
+    let
+        parameters : Parameters
+        parameters =
+            model.simulation.parameters
+
+        selectedParameter : Maybe ParameterName
+        selectedParameter =
+            model.editing
+    in
     column
         [ Element.width <| Element.fillPortion 1
         , Element.height Element.fill
-        , Background.color <| Element.rgb255 230 230 230
+        , Background.color colorLightGray
         ]
         [ column
             [ Element.width Element.fill
@@ -155,60 +193,60 @@ viewParameterList parameters =
             , Element.spacing 20
             , Element.scrollbarY
             ]
-            [ viewParameter "📅" "Initial state" <|
+            [ viewParameterSummary InitialState selectedParameter "📅" "Initial state" <|
                 case parameters.initialState of
                     Parameters.PreIndustrial ->
                         "pre-industrial"
 
                     Parameters.Now ->
                         "present-day"
-            , viewParameter "⏱" "Simulation length" <|
+            , viewParameterSummary SimulationLength selectedParameter "⏱" "Simulation length" <|
                 String.fromInt (Duration.intoYears parameters.duration)
                     ++ " years"
-            , viewSection "Astronomical parameters"
-                [ viewParameter "☀️" "Earth-Sun distance" <|
+            , viewParameterSection "Astronomical parameters"
+                [ viewParameterSummary EarthSunDistance selectedParameter "☀️" "Earth-Sun distance" <|
                     String.fromFloat parameters.distance_ts_value
                         ++ "% of present-day"
-                , viewParameter "🔋" "Solar power" <|
+                , viewParameterSummary SolarPower selectedParameter "🔋" "Solar power" <|
                     String.fromFloat parameters.puissance_soleil_value
                         ++ "% of present-day"
-                , viewParameter "🌍" "Excentricity" <|
+                , viewParameterSummary Excentricity selectedParameter "🌍" "Excentricity" <|
                     String.fromFloat parameters.excentricite_value
-                , viewParameter "🌍" "Obliquity" <|
+                , viewParameterSummary Obliquity selectedParameter "🌍" "Obliquity" <|
                     String.fromFloat parameters.obliquite_value
                         ++ "º"
-                , viewParameter "🌍" "Precession" <|
+                , viewParameterSummary Precession selectedParameter "🌍" "Precession" <|
                     String.fromFloat parameters.precession_value
                         ++ "º"
                 ]
-            , viewSection "CO2 emissions"
-                [ viewParameter "🌫" "CO2 concentration" <|
+            , viewParameterSection "CO2 emissions"
+                [ viewParameterSummary Co2Concentration selectedParameter "🌫" "CO2 concentration" <|
                     if parameters.fixed_concentration then
                         String.fromFloat parameters.coo_concentr_value
 
                     else
                         "depends on sources & sinks"
-                , viewParameter "👨" "Anthropogenic emissions" <|
+                , viewParameterSummary AnthropogenicEmissions selectedParameter "👨" "Anthropogenic emissions" <|
                     String.fromFloat parameters.emit_anthro_coo_value
                         ++ " GtC/year"
-                , viewParameter "🌋" "Volcanic emissions" <|
+                , viewParameterSummary VolcanicEmissions selectedParameter "🌋" "Volcanic emissions" <|
                     String.fromFloat parameters.volcan_value
                         ++ " GtC/year"
-                , viewParameter "🛢" "Biological storage" <|
+                , viewParameterSummary BiologicalStorage selectedParameter "🛢" "Biological storage" <|
                     String.fromFloat parameters.stockage_biologique_value
                         ++ " Mt/year/ppm"
-                , viewParameter "⛰" "Continental alteration" <|
+                , viewParameterSummary ContinentalAlteration selectedParameter "⛰" "Continental alteration" <|
                     String.fromFloat parameters.alteration_value
                         ++ "% relatively to present-day"
                 ]
-            , viewSection "Climate feedbacks"
-                [ viewParameter "✨" "Planetary albedo" <|
+            , viewParameterSection "Climate feedbacks"
+                [ viewParameterSummary PlanetaryAlbedo selectedParameter "✨" "Planetary albedo" <|
                     if parameters.fixed_albedo then
                         String.fromFloat parameters.albedo_value ++ "%"
 
                     else
                         "depends on temperature"
-                , viewParameter "🌊" "Oceanic carbon sink" <|
+                , viewParameterSummary OceanicCarbonSink selectedParameter "🌊" "Oceanic carbon sink" <|
                     if parameters.debranche_ocean then
                         "neglected"
 
@@ -217,13 +255,13 @@ viewParameterList parameters =
 
                     else
                         "depends on temperature"
-                , viewParameter "🌳" "Vegetation carbon sink" <|
+                , viewParameterSummary VegetationCarbonSink selectedParameter "🌳" "Vegetation carbon sink" <|
                     if parameters.debranche_biologie then
                         "neglected"
 
                     else
                         String.fromFloat parameters.puit_bio_value ++ "%"
-                , viewParameter "☁️" "Water vapor concentration" <|
+                , viewParameterSummary WaterVaporConcentration selectedParameter "☁️" "Water vapor concentration" <|
                     if parameters.fixed_eau then
                         String.fromFloat parameters.rapport_H2O_value
                             ++ "% of present-day"
@@ -235,8 +273,8 @@ viewParameterList parameters =
         ]
 
 
-viewSection : String -> List (Element Msg) -> Element Msg
-viewSection title contents =
+viewParameterSection : String -> List (Element Msg) -> Element Msg
+viewParameterSection title contents =
     column
         [ Element.width Element.fill
         , Element.spacing 10
@@ -245,7 +283,7 @@ viewSection title contents =
             [ Element.width Element.fill
             , Element.paddingXY 0 10
             , Border.widthEach { top = 1, right = 0, bottom = 0, left = 0 }
-            , Border.color (Element.rgb255 200 200 200)
+            , Border.color colorGray
             , Font.size 14
             ]
           <|
@@ -255,15 +293,425 @@ viewSection title contents =
         ]
 
 
-viewParameter : String -> String -> String -> Element Msg
-viewParameter icon label value =
-    Element.row [ Element.spacing 5 ]
+viewParameterSummary : ParameterName -> Maybe ParameterName -> String -> String -> String -> Element Msg
+viewParameterSummary parameterName selectedParameter icon label value =
+    let
+        isSelected =
+            selectedParameter == Just parameterName
+
+        selectedBackgroundColor =
+            if isSelected then
+                Background.color colorWhite
+
+            else
+                noAttribute
+
+        toggleEditingOnClick =
+            Element.Events.onClick
+                (EditParameter
+                    (if isSelected then
+                        Nothing
+
+                     else
+                        Just parameterName
+                    )
+                )
+    in
+    Element.row
+        [ Element.spacing 5
+        , selectedBackgroundColor
+        , toggleEditingOnClick
+        ]
         [ el [ Element.alignTop ] (text icon)
         , Element.wrappedRow [ Element.width Element.fill, Element.spacing 10 ]
             [ text (label ++ ":")
-            , el [ Font.color (Element.rgb255 100 100 100) ]
+            , el [ Font.color colorDarkGray ]
                 (text value)
             ]
+        ]
+
+
+viewEditing : Model -> Element Msg
+viewEditing { editing, parametersForm } =
+    case editing of
+        Nothing ->
+            text ""
+
+        Just InitialState ->
+            viewEditingInitialState parametersForm
+
+        Just SimulationLength ->
+            viewEditingSimulationLength parametersForm
+
+        Just EarthSunDistance ->
+            viewEditingEarthSunDistance parametersForm
+
+        Just SolarPower ->
+            viewEditingSolarPower parametersForm
+
+        Just Excentricity ->
+            viewEditingExcentricity parametersForm
+
+        Just Obliquity ->
+            viewEditingObliquity parametersForm
+
+        Just Precession ->
+            viewEditingPrecession parametersForm
+
+        Just Co2Concentration ->
+            viewEditingCo2Concentration parametersForm
+
+        Just AnthropogenicEmissions ->
+            viewEditingAnthropogenicEmissions parametersForm
+
+        Just VolcanicEmissions ->
+            viewEditingVolcanicEmissions parametersForm
+
+        Just BiologicalStorage ->
+            viewEditingBiologicalStorage parametersForm
+
+        Just ContinentalAlteration ->
+            viewEditingContinentalAlteration parametersForm
+
+        Just PlanetaryAlbedo ->
+            viewEditingPlanetaryAlbedo parametersForm
+
+        Just OceanicCarbonSink ->
+            viewEditingOceanicCarbonSink parametersForm
+
+        Just VegetationCarbonSink ->
+            viewEditingVegetationCarbonSink parametersForm
+
+        Just WaterVaporConcentration ->
+            viewEditingWaterVaporConcentration parametersForm
+
+
+viewEditingInitialState : ParametersForm -> Element Msg
+viewEditingInitialState parametersForm =
+    viewEditingParameter
+        { title = "Initial state"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option Parameters.PreIndustrial (text "Pre-industrial")
+                    , Input.option Parameters.Now (text "Present-day")
+                    ]
+                , selected = Just parametersForm.initialState
+                , label = Input.labelHidden "Initial state"
+                }
+            ]
+        }
+
+
+viewEditingSimulationLength : ParametersForm -> Element Msg
+viewEditingSimulationLength parametersForm =
+    viewEditingParameter
+        { title = ""
+        , form =
+            [ Input.text []
+                { onChange = ChangeSimulationLength
+                , text = parametersForm.simulationLength
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Simulation length (in years)"
+                }
+            ]
+        }
+
+
+viewEditingEarthSunDistance : ParametersForm -> Element Msg
+viewEditingEarthSunDistance parametersForm =
+    viewEditingParameter
+        { title = "Earth-Sun distance"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.EarthSunDistancePresentDay (text "Present-day distance (100%)")
+                    , Input.option ParametersForm.EarthSunDistanceCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.earthSunDistance
+                , label = Input.labelHidden "Earth-Sun distance"
+                }
+            ]
+        }
+
+
+viewEditingSolarPower : ParametersForm -> Element Msg
+viewEditingSolarPower parametersForm =
+    viewEditingParameter
+        { title = "Solar Power"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.SolarPowerPresentDay (text "Present-day power (100%)")
+                    , Input.option ParametersForm.SolarPowerEarthBeginning (text "Same as at the beginning of the Earth history (70%)")
+                    , Input.option ParametersForm.SolarPowerCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.solarPower
+                , label = Input.labelHidden "Solar Power"
+                }
+            ]
+        }
+
+
+viewEditingExcentricity : ParametersForm -> Element Msg
+viewEditingExcentricity parametersForm =
+    viewEditingParameter
+        { title = "Excentricity"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.ExcentricityPresentDay (text "Present-day excentricity (0.0167)")
+                    , Input.option ParametersForm.ExcentricityMinimum (text "Minimum value (0)")
+                    , Input.option ParametersForm.ExcentricityMaximum (text "Maximum value (0.06)")
+                    , Input.option ParametersForm.ExcentricityCustom (text "OtherValue")
+                    ]
+                , selected = Just parametersForm.excentricity
+                , label = Input.labelHidden "Excentricity"
+                }
+            ]
+        }
+
+
+viewEditingObliquity : ParametersForm -> Element Msg
+viewEditingObliquity parametersForm =
+    let
+        value =
+            parametersForm.obliquity
+    in
+    viewEditingParameter
+        { title = "Obliquity"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.ObliquityPresentDay (text "Present-day obliquity (23.5º)")
+                    , Input.option ParametersForm.ObliquityMinimum (text "Minimum value (21.8º)")
+                    , Input.option ParametersForm.ObliquityMaximum (text "Maximum value (24.4º)")
+                    , Input.option ParametersForm.ObliquityCustom (text "Other value")
+                    ]
+                , selected = Just value
+                , label = Input.labelHidden "Obliquity"
+                }
+            ]
+        }
+
+
+viewEditingPrecession : ParametersForm -> Element Msg
+viewEditingPrecession parametersForm =
+    let
+        value =
+            parametersForm.precession
+    in
+    viewEditingParameter
+        { title = "Precession"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.PrecessionPresentDay (text "Present-day precession (102.7º)")
+                    , Input.option ParametersForm.PrecessionMinimum (text "Minimum value (90º)")
+                    , Input.option ParametersForm.PrecessionMaximum (text "Maximum value (270º)")
+                    , Input.option ParametersForm.PrecessionCustom (text "Other value")
+                    ]
+                , selected = Just value
+                , label = Input.labelHidden "Precession"
+                }
+            ]
+        }
+
+
+viewEditingCo2Concentration : ParametersForm -> Element Msg
+viewEditingCo2Concentration parametersForm =
+    viewEditingParameter
+        { title = "CO2 emissions"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.Co2EmissionsConstant (text "Directly set the CO2 concentration, which will remain constant throughout the whole simulation")
+                    , Input.option ParametersForm.Co2EmissionsComputed (text "Set the CO2 sources and sinks")
+                    ]
+                , selected = Just parametersForm.co2Emissions
+                , label = Input.labelHidden "CO2 emissions"
+                }
+            ]
+        }
+
+
+viewEditingAnthropogenicEmissions : ParametersForm -> Element Msg
+viewEditingAnthropogenicEmissions parametersForm =
+    viewEditingParameter
+        { title = "Anthropogenic emissions"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.AnthropogenicEmissionsNull (text "Null (0 GtC/year)")
+                    , Input.option ParametersForm.AnthropogenicEmissionsPresentDay (text "Present-day value (8 GtC/year)")
+                    , Input.option ParametersForm.AnthropogenicEmissionsTwicePresentDay (text "Twice the present-day value (16 GtC/year)")
+                    , Input.option ParametersForm.AnthropogenicEmissionsCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.anthropogenicEmissions
+                , label = Input.labelHidden "Anthropogenic emissions"
+                }
+            ]
+        }
+
+
+viewEditingVolcanicEmissions : ParametersForm -> Element Msg
+viewEditingVolcanicEmissions parametersForm =
+    viewEditingParameter
+        { title = "Volcanic emissions"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.VolcanicEmissionsPresentDay (text "Same as present-day (0.083 GtC/year)")
+                    , Input.option ParametersForm.VolcanicEmissionsEarthBeginning (text "Same as at the beginning of the Earth history (0.42 GtC/year)")
+                    , Input.option ParametersForm.VolcanicEmissionsCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.volcanicEmissions
+                , label = Input.labelHidden "Volcanic emissions"
+                }
+            ]
+        }
+
+
+viewEditingBiologicalStorage : ParametersForm -> Element Msg
+viewEditingBiologicalStorage parametersForm =
+    viewEditingParameter
+        { title = "Biological storage"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.BiologicalStoragePresentDay (text "Same as present-day (0 Mt/year/ppm)")
+                    , Input.option ParametersForm.BiologicalStorageCarboniferous (text "Same as during the Carboniferous (0.71 Mt/year/ppm)")
+                    , Input.option ParametersForm.BiologicalStorageCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.biologicalStorage
+                , label = Input.labelHidden "Biological storage"
+                }
+            ]
+        }
+
+
+viewEditingContinentalAlteration : ParametersForm -> Element Msg
+viewEditingContinentalAlteration parametersForm =
+    viewEditingParameter
+        { title = "Continental alteration"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.ContinentalAlterationPresentDay (text "Same as present-day (100%)")
+                    , Input.option ParametersForm.ContinentalAlterationCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.continentalAlteration
+                , label = Input.labelHidden "Continental alteration"
+                }
+            ]
+        }
+
+
+viewEditingPlanetaryAlbedo : ParametersForm -> Element Msg
+viewEditingPlanetaryAlbedo parametersForm =
+    viewEditingParameter
+        { title = "Planetary albedo"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.PlanetaryAlbedoComputed (text "Computed as a function of temperature, permitting the feedback")
+                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 33) (text "Constant as its present-day value (33%)")
+                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 33) (text "Constant as its pre-industrial value (33%)")
+                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 25) (text "Constant at the value of a soil (25%)")
+                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 90) (text "Constant at the value of ice (90%)")
+                    , Input.option ParametersForm.PlanetaryAlbedoCustom (text "Constant at another value")
+                    ]
+                , selected = Just parametersForm.planetaryAlbedo
+                , label = Input.labelHidden "Planetary albedo"
+                }
+            ]
+        }
+
+
+viewEditingOceanicCarbonSink : ParametersForm -> Element Msg
+viewEditingOceanicCarbonSink parametersForm =
+    viewEditingParameter
+        { title = "Oceanic carbon sink"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.OceanicCarbonSinkNeglected (text "Neglect the oceanic sink")
+                    , Input.option ParametersForm.OceanicCarbonSinkComputed (text "The oceanic carbon sink is computed as a function of temperature")
+                    , Input.option ParametersForm.OceanicCarbonSinkConstantPresentDay (text "The oceanic carbon sink does not depend on temperature and remains as today")
+                    , Input.option ParametersForm.OceanicCarbonSinkConstantCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.oceanicCarbonSink
+                , label = Input.labelHidden "Oceanic carbon sink"
+                }
+            ]
+        }
+
+
+viewEditingVegetationCarbonSink : ParametersForm -> Element Msg
+viewEditingVegetationCarbonSink parametersForm =
+    viewEditingParameter
+        { title = "Vegetation carbon sink"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.VegetationCarbonSinkNeglected (text "Neglect the CO2 fluxes associated with the vegetation")
+                    , Input.option ParametersForm.VegetationCarbonSinkAsToday (text "The vegetation mops up 35% of anthropogenic CO2 emissions, as today")
+                    , Input.option ParametersForm.VegetationCarbonSinkCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.vegetationCarbonSink
+                , label = Input.labelHidden "Vegetation carbon sink"
+                }
+            ]
+        }
+
+
+viewEditingWaterVaporConcentration : ParametersForm -> Element Msg
+viewEditingWaterVaporConcentration parametersForm =
+    viewEditingParameter
+        { title = "Water vapor atmospheric concentration"
+        , form =
+            [ Input.radio []
+                { onChange = always NoOp
+                , options =
+                    [ Input.option ParametersForm.WaterVaporConcentrationComputed (text "Computed as a function of temperature")
+                    , Input.option ParametersForm.WaterVaporConcentrationConstantPresentDay (text "Constant at the present-day value (105.7%)")
+                    , Input.option ParametersForm.WaterVaporConcentrationConstantPreIndustrial (text "Constant at the pre-industrial value (100%)")
+                    , Input.option ParametersForm.WaterVaporConcentrationConstantCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.waterVaporConcentration
+                , label = Input.labelHidden "Vegetation carbon sink"
+                }
+            ]
+        }
+
+
+viewEditingParameter : { title : String, form : List (Element Msg) } -> Element Msg
+viewEditingParameter { title, form } =
+    column
+        [ Element.height Element.fill
+        , Element.width (Element.fillPortion 1)
+        , Background.color colorGray
+        ]
+        [ el [] (text title)
+        , column
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            ]
+            form
         ]
 
 
@@ -357,6 +805,11 @@ viewChart config =
         ]
 
 
+noAttribute : Element.Attribute msg
+noAttribute =
+    Element.htmlAttribute (Html.Attributes.class "")
+
+
 
 -- COLORS
 
@@ -364,6 +817,21 @@ viewChart config =
 colorBlack : Element.Color
 colorBlack =
     Element.rgb255 0 0 0
+
+
+colorDarkGray : Element.Color
+colorDarkGray =
+    Element.rgb255 100 100 100
+
+
+colorGray : Element.Color
+colorGray =
+    Element.rgb255 200 200 200
+
+
+colorLightGray : Element.Color
+colorLightGray =
+    Element.rgb255 230 230 230
 
 
 colorWhite : Element.Color

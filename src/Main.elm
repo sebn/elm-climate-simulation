@@ -100,6 +100,8 @@ type Msg
     | ChangeSolarPowerCustomValue String
     | ChangeExcentricity ParametersForm.Excentricity
     | ChangeExcentricityCustomValue String
+    | ChangeObliquity ParametersForm.Obliquity
+    | ChangeObliquityCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -145,6 +147,14 @@ update msg model =
 
         ChangeExcentricityCustomValue value ->
             { model | parametersForm = { parametersForm | excentricityCustomValue = value } }
+                |> updateSimulation
+
+        ChangeObliquity value ->
+            { model | parametersForm = { parametersForm | obliquity = value } }
+                |> updateSimulation
+
+        ChangeObliquityCustomValue value ->
+            { model | parametersForm = { parametersForm | obliquityCustomValue = value } }
                 |> updateSimulation
 
 
@@ -539,7 +549,7 @@ viewEditingObliquity parametersForm =
         { title = "Obliquity"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeObliquity
                 , options =
                     [ Input.option ParametersForm.ObliquityPresentDay (text "Present-day obliquity (23.5º)")
                     , Input.option ParametersForm.ObliquityMinimum (text "Minimum value (21.8º)")
@@ -548,6 +558,12 @@ viewEditingObliquity parametersForm =
                     ]
                 , selected = Just value
                 , label = Input.labelHidden "Obliquity"
+                }
+            , Input.text []
+                { onChange = ChangeObliquityCustomValue
+                , text = parametersForm.obliquityCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Obliquity (in º)"
                 }
             ]
         }

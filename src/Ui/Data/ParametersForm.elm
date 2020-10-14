@@ -229,7 +229,21 @@ toParameters parametersForm defaults =
                 parametersForm.earthSunDistanceCustomValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.distance_ts_value
-    , obliquite_value = defaults.obliquite_value
+    , obliquite_value =
+        case parametersForm.obliquity of
+            ObliquityPresentDay ->
+                23.5
+
+            ObliquityMinimum ->
+                21.8
+
+            ObliquityMaximum ->
+                24.4
+
+            ObliquityCustom ->
+                parametersForm.obliquityCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.obliquite_value
     , excentricite_value =
         case parametersForm.excentricity of
             ExcentricityPresentDay ->

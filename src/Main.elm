@@ -93,6 +93,8 @@ type Msg
     = NoOp
     | EditParameter (Maybe ParameterName)
     | ChangeSimulationLength String
+    | ChangeEarthSunDistance ParametersForm.EarthSunDistance
+    | ChangeEarthSunDistanceCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -110,6 +112,14 @@ update msg model =
 
         ChangeSimulationLength simulationLength ->
             { model | parametersForm = { parametersForm | simulationLength = simulationLength } }
+                |> updateSimulation
+
+        ChangeEarthSunDistance earthSunDistance ->
+            { model | parametersForm = { parametersForm | earthSunDistance = earthSunDistance } }
+                |> updateSimulation
+
+        ChangeEarthSunDistanceCustomValue value ->
+            { model | parametersForm = { parametersForm | earthSunDistanceCustomValue = value } }
                 |> updateSimulation
 
 
@@ -425,13 +435,19 @@ viewEditingEarthSunDistance parametersForm =
         { title = "Earth-Sun distance"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeEarthSunDistance
                 , options =
                     [ Input.option ParametersForm.EarthSunDistancePresentDay (text "Present-day distance (100%)")
                     , Input.option ParametersForm.EarthSunDistanceCustom (text "Other value")
                     ]
                 , selected = Just parametersForm.earthSunDistance
                 , label = Input.labelHidden "Earth-Sun distance"
+                }
+            , Input.text []
+                { onChange = ChangeEarthSunDistanceCustomValue
+                , text = parametersForm.earthSunDistanceCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Earth-Sun distance (in percentage of the present-day distance)"
                 }
             ]
         }

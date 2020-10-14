@@ -209,7 +209,15 @@ toParameters parametersForm defaults =
     , albedo_value = defaults.albedo_value
     , coo_concentr_value = defaults.coo_concentr_value
     , puissance_soleil_value = defaults.puissance_soleil_value
-    , distance_ts_value = defaults.distance_ts_value
+    , distance_ts_value =
+        case parametersForm.earthSunDistance of
+            EarthSunDistancePresentDay ->
+                100
+
+            EarthSunDistanceCustom ->
+                parametersForm.earthSunDistanceCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.distance_ts_value
     , obliquite_value = defaults.obliquite_value
     , excentricite_value = defaults.excentricite_value
     , precession_value = defaults.precession_value

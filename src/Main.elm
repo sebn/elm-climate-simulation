@@ -96,6 +96,8 @@ type Msg
     | ChangeSimulationLength String
     | ChangeEarthSunDistance ParametersForm.EarthSunDistance
     | ChangeEarthSunDistanceCustomValue String
+    | ChangeSolarPower ParametersForm.SolarPower
+    | ChangeSolarPowerCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -125,6 +127,14 @@ update msg model =
 
         ChangeEarthSunDistanceCustomValue value ->
             { model | parametersForm = { parametersForm | earthSunDistanceCustomValue = value } }
+                |> updateSimulation
+
+        ChangeSolarPower value ->
+            { model | parametersForm = { parametersForm | solarPower = value } }
+                |> updateSimulation
+
+        ChangeSolarPowerCustomValue value ->
+            { model | parametersForm = { parametersForm | solarPowerCustomValue = value } }
                 |> updateSimulation
 
 
@@ -464,7 +474,7 @@ viewEditingSolarPower parametersForm =
         { title = "Solar Power"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeSolarPower
                 , options =
                     [ Input.option ParametersForm.SolarPowerPresentDay (text "Present-day power (100%)")
                     , Input.option ParametersForm.SolarPowerEarthBeginning (text "Same as at the beginning of the Earth history (70%)")
@@ -472,6 +482,12 @@ viewEditingSolarPower parametersForm =
                     ]
                 , selected = Just parametersForm.solarPower
                 , label = Input.labelHidden "Solar Power"
+                }
+            , Input.text []
+                { onChange = ChangeSolarPowerCustomValue
+                , text = parametersForm.solarPowerCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Solar power (in percentage of the present-day distance)"
                 }
             ]
         }

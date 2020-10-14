@@ -208,7 +208,18 @@ toParameters parametersForm defaults =
     , puit_oce_value = defaults.puit_oce_value
     , albedo_value = defaults.albedo_value
     , coo_concentr_value = defaults.coo_concentr_value
-    , puissance_soleil_value = defaults.puissance_soleil_value
+    , puissance_soleil_value =
+        case parametersForm.solarPower of
+            SolarPowerPresentDay ->
+                100
+
+            SolarPowerEarthBeginning ->
+                70
+
+            SolarPowerCustom ->
+                parametersForm.solarPowerCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.puissance_soleil_value
     , distance_ts_value =
         case parametersForm.earthSunDistance of
             EarthSunDistancePresentDay ->

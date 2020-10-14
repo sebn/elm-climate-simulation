@@ -92,6 +92,7 @@ init =
 type Msg
     = NoOp
     | EditParameter (Maybe ParameterName)
+    | ChangeInitialState Parameters.InitialState
     | ChangeSimulationLength String
     | ChangeEarthSunDistance ParametersForm.EarthSunDistance
     | ChangeEarthSunDistanceCustomValue String
@@ -109,6 +110,10 @@ update msg model =
 
         EditParameter editing ->
             { model | editing = editing }
+
+        ChangeInitialState initialState ->
+            { model | parametersForm = { parametersForm | initialState = initialState } }
+                |> updateSimulation
 
         ChangeSimulationLength simulationLength ->
             { model | parametersForm = { parametersForm | simulationLength = simulationLength } }
@@ -402,7 +407,7 @@ viewEditingInitialState parametersForm =
         { title = "Initial state"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeInitialState
                 , options =
                     [ Input.option Parameters.PreIndustrial (text "Pre-industrial")
                     , Input.option Parameters.Now (text "Present-day")

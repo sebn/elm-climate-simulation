@@ -230,7 +230,21 @@ toParameters parametersForm defaults =
                     |> String.toFloat
                     |> Maybe.withDefault defaults.distance_ts_value
     , obliquite_value = defaults.obliquite_value
-    , excentricite_value = defaults.excentricite_value
+    , excentricite_value =
+        case parametersForm.excentricity of
+            ExcentricityPresentDay ->
+                0.0167
+
+            ExcentricityMinimum ->
+                0
+
+            ExcentricityMaximum ->
+                0.06
+
+            ExcentricityCustom ->
+                parametersForm.excentricityCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.excentricite_value
     , precession_value = defaults.precession_value
     , alteration_value = defaults.alteration_value
     , emit_anthro_coo_value = defaults.emit_anthro_coo_value

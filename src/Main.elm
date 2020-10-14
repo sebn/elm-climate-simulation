@@ -98,6 +98,8 @@ type Msg
     | ChangeEarthSunDistanceCustomValue String
     | ChangeSolarPower ParametersForm.SolarPower
     | ChangeSolarPowerCustomValue String
+    | ChangeExcentricity ParametersForm.Excentricity
+    | ChangeExcentricityCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -135,6 +137,14 @@ update msg model =
 
         ChangeSolarPowerCustomValue value ->
             { model | parametersForm = { parametersForm | solarPowerCustomValue = value } }
+                |> updateSimulation
+
+        ChangeExcentricity excentricity ->
+            { model | parametersForm = { parametersForm | excentricity = excentricity } }
+                |> updateSimulation
+
+        ChangeExcentricityCustomValue value ->
+            { model | parametersForm = { parametersForm | excentricityCustomValue = value } }
                 |> updateSimulation
 
 
@@ -499,7 +509,7 @@ viewEditingExcentricity parametersForm =
         { title = "Excentricity"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeExcentricity
                 , options =
                     [ Input.option ParametersForm.ExcentricityPresentDay (text "Present-day excentricity (0.0167)")
                     , Input.option ParametersForm.ExcentricityMinimum (text "Minimum value (0)")
@@ -508,6 +518,12 @@ viewEditingExcentricity parametersForm =
                     ]
                 , selected = Just parametersForm.excentricity
                 , label = Input.labelHidden "Excentricity"
+                }
+            , Input.text []
+                { onChange = ChangeExcentricityCustomValue
+                , text = parametersForm.excentricityCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Excentricity"
                 }
             ]
         }

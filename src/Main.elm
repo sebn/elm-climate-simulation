@@ -102,6 +102,8 @@ type Msg
     | ChangeExcentricityCustomValue String
     | ChangeObliquity ParametersForm.Obliquity
     | ChangeObliquityCustomValue String
+    | ChangePrecession ParametersForm.Precession
+    | ChangePrecessionCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -155,6 +157,14 @@ update msg model =
 
         ChangeObliquityCustomValue value ->
             { model | parametersForm = { parametersForm | obliquityCustomValue = value } }
+                |> updateSimulation
+
+        ChangePrecession value ->
+            { model | parametersForm = { parametersForm | precession = value } }
+                |> updateSimulation
+
+        ChangePrecessionCustomValue value ->
+            { model | parametersForm = { parametersForm | precessionCustomValue = value } }
                 |> updateSimulation
 
 
@@ -579,7 +589,7 @@ viewEditingPrecession parametersForm =
         { title = "Precession"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangePrecession
                 , options =
                     [ Input.option ParametersForm.PrecessionPresentDay (text "Present-day precession (102.7º)")
                     , Input.option ParametersForm.PrecessionMinimum (text "Minimum value (90º)")
@@ -588,6 +598,12 @@ viewEditingPrecession parametersForm =
                     ]
                 , selected = Just value
                 , label = Input.labelHidden "Precession"
+                }
+            , Input.text []
+                { onChange = ChangePrecessionCustomValue
+                , text = parametersForm.precessionCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Precession (in º)"
                 }
             ]
         }

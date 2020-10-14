@@ -259,7 +259,21 @@ toParameters parametersForm defaults =
                 parametersForm.excentricityCustomValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.excentricite_value
-    , precession_value = defaults.precession_value
+    , precession_value =
+        case parametersForm.precession of
+            PrecessionPresentDay ->
+                102.7
+
+            PrecessionMinimum ->
+                90
+
+            PrecessionMaximum ->
+                270
+
+            PrecessionCustom ->
+                parametersForm.precessionCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.precession_value
     , alteration_value = defaults.alteration_value
     , emit_anthro_coo_value = defaults.emit_anthro_coo_value
     , volcan_value = defaults.volcan_value

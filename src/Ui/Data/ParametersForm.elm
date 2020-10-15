@@ -313,6 +313,17 @@ toParameters parametersForm defaults =
                 parametersForm.anthropogenicEmissionsCustomValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.emit_anthro_coo_value
-    , volcan_value = defaults.volcan_value
+    , volcan_value =
+        case parametersForm.volcanicEmissions of
+            VolcanicEmissionsPresentDay ->
+                0.083
+
+            VolcanicEmissionsEarthBeginning ->
+                0.42
+
+            VolcanicEmissionsCustom ->
+                parametersForm.volcanicEmissionsCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.volcan_value
     , stockage_biologique_value = defaults.stockage_biologique_value
     }

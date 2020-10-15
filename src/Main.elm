@@ -110,6 +110,8 @@ type Msg
     | ChangeCo2ConcentrationCustomValue String
     | ChangeAnthropogenicEmissions ParametersForm.AnthropogenicEmissions
     | ChangeAnthropogenicEmissionsCustomValue String
+    | ChangeVolcanicEmissions ParametersForm.VolcanicEmissions
+    | ChangeVolcanicEmissionsCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -191,6 +193,14 @@ update msg model =
 
         ChangeAnthropogenicEmissionsCustomValue value ->
             { model | parametersForm = { parametersForm | anthropogenicEmissionsCustomValue = value } }
+                |> updateSimulation
+
+        ChangeVolcanicEmissions value ->
+            { model | parametersForm = { parametersForm | volcanicEmissions = value } }
+                |> updateSimulation
+
+        ChangeVolcanicEmissionsCustomValue value ->
+            { model | parametersForm = { parametersForm | volcanicEmissionsCustomValue = value } }
                 |> updateSimulation
 
 
@@ -723,10 +733,10 @@ viewEditingAnthropogenicEmissions parametersForm =
 viewEditingVolcanicEmissions : ParametersForm -> Element Msg
 viewEditingVolcanicEmissions parametersForm =
     viewEditingParameter
-        { title = "Volcanic emissions"
+        { title = "Volcanic and oceanic ridge activity"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeVolcanicEmissions
                 , options =
                     [ Input.option ParametersForm.VolcanicEmissionsPresentDay (text "Same as present-day (0.083 GtC/year)")
                     , Input.option ParametersForm.VolcanicEmissionsEarthBeginning (text "Same as at the beginning of the Earth history (0.42 GtC/year)")
@@ -734,6 +744,12 @@ viewEditingVolcanicEmissions parametersForm =
                     ]
                 , selected = Just parametersForm.volcanicEmissions
                 , label = Input.labelHidden "Volcanic emissions"
+                }
+            , Input.text []
+                { onChange = ChangeVolcanicEmissionsCustomValue
+                , text = parametersForm.volcanicEmissionsCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Volcanic emissions (in GtC/year)"
                 }
             ]
         }

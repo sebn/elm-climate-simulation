@@ -112,6 +112,8 @@ type Msg
     | ChangeAnthropogenicEmissionsCustomValue String
     | ChangeVolcanicEmissions ParametersForm.VolcanicEmissions
     | ChangeVolcanicEmissionsCustomValue String
+    | ChangeBiologicalStorage ParametersForm.BiologicalStorage
+    | ChangeBiologicalStorageCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -201,6 +203,14 @@ update msg model =
 
         ChangeVolcanicEmissionsCustomValue value ->
             { model | parametersForm = { parametersForm | volcanicEmissionsCustomValue = value } }
+                |> updateSimulation
+
+        ChangeBiologicalStorage value ->
+            { model | parametersForm = { parametersForm | biologicalStorage = value } }
+                |> updateSimulation
+
+        ChangeBiologicalStorageCustomValue value ->
+            { model | parametersForm = { parametersForm | biologicalStorageCustomValue = value } }
                 |> updateSimulation
 
 
@@ -761,7 +771,7 @@ viewEditingBiologicalStorage parametersForm =
         { title = "Biological storage"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeBiologicalStorage
                 , options =
                     [ Input.option ParametersForm.BiologicalStoragePresentDay (text "Same as present-day (0 Mt/year/ppm)")
                     , Input.option ParametersForm.BiologicalStorageCarboniferous (text "Same as during the Carboniferous (0.71 Mt/year/ppm)")
@@ -769,6 +779,12 @@ viewEditingBiologicalStorage parametersForm =
                     ]
                 , selected = Just parametersForm.biologicalStorage
                 , label = Input.labelHidden "Biological storage"
+                }
+            , Input.text []
+                { onChange = ChangeBiologicalStorageCustomValue
+                , text = parametersForm.biologicalStorageCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Biological storage (in Mt/year/ppm)"
                 }
             ]
         }

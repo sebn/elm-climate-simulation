@@ -325,5 +325,16 @@ toParameters parametersForm defaults =
                 parametersForm.volcanicEmissionsCustomValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.volcan_value
-    , stockage_biologique_value = defaults.stockage_biologique_value
+    , stockage_biologique_value =
+        case parametersForm.biologicalStorage of
+            BiologicalStoragePresentDay ->
+                0
+
+            BiologicalStorageCarboniferous ->
+                0.71
+
+            BiologicalStorageCustom ->
+                parametersForm.biologicalStorageCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.stockage_biologique_value
     }

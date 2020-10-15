@@ -91,7 +91,7 @@ type Precession
 
 
 type Co2
-    = Co2ConstantConcentration
+    = Co2Constant
     | Co2SourcesAndSinks
 
 
@@ -200,7 +200,7 @@ toParameters parametersForm defaults =
     , fixed_eau = defaults.fixed_eau
     , fixed_concentration =
         case parametersForm.co2 of
-            Co2ConstantConcentration ->
+            Co2Constant ->
                 True
 
             Co2SourcesAndSinks ->
@@ -213,7 +213,24 @@ toParameters parametersForm defaults =
     , puit_bio_value = defaults.puit_bio_value
     , puit_oce_value = defaults.puit_oce_value
     , albedo_value = defaults.albedo_value
-    , coo_concentr_value = defaults.coo_concentr_value
+    , coo_concentr_value =
+        case parametersForm.co2Concentration of
+            Co2ConcentrationPresentDay ->
+                405
+
+            Co2ConcentrationPreIndustrial ->
+                280
+
+            Co2ConcentrationCretaceous ->
+                1500
+
+            Co2ConcentrationEarthBeginning ->
+                300000
+
+            Co2ConcentrationCustom ->
+                parametersForm.co2ConcentrationCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.coo_concentr_value
     , puissance_soleil_value =
         case parametersForm.solarPower of
             SolarPowerPresentDay ->

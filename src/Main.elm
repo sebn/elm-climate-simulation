@@ -57,6 +57,7 @@ type ParameterName
     | Excentricity
     | Obliquity
     | Precession
+    | Co2
     | Co2Concentration
     | AnthropogenicEmissions
     | VolcanicEmissions
@@ -105,6 +106,8 @@ type Msg
     | ChangePrecession ParametersForm.Precession
     | ChangePrecessionCustomValue String
     | ChangeCo2 ParametersForm.Co2
+    | ChangeCo2Concentration ParametersForm.Co2Concentration
+    | ChangeCo2ConcentrationCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -170,6 +173,14 @@ update msg model =
 
         ChangeCo2 value ->
             { model | parametersForm = { parametersForm | co2 = value } }
+                |> updateSimulation
+
+        ChangeCo2Concentration value ->
+            { model | parametersForm = { parametersForm | co2Concentration = value } }
+                |> updateSimulation
+
+        ChangeCo2ConcentrationCustomValue value ->
+            { model | parametersForm = { parametersForm | co2ConcentrationCustomValue = value } }
                 |> updateSimulation
 
 
@@ -279,26 +290,37 @@ viewParameterList model =
                     String.fromFloat parameters.precession_value
                         ++ "º"
                 ]
-            , viewParameterSection "CO2 emissions"
-                [ viewParameterSummary Co2Concentration selectedParameter "🌫" "CO2 concentration" <|
-                    if parameters.fixed_concentration then
-                        String.fromFloat parameters.coo_concentr_value
+            , viewParameterSection "CO2 emissions" <|
+                List.concat
+                    [ [ viewParameterSummary Co2 selectedParameter "☁️" "CO2" <|
+                            if parameters.fixed_concentration then
+                                "constant"
 
-                    else
-                        "depends on sources & sinks"
-                , viewParameterSummary AnthropogenicEmissions selectedParameter "👨" "Anthropogenic emissions" <|
-                    String.fromFloat parameters.emit_anthro_coo_value
-                        ++ " GtC/year"
-                , viewParameterSummary VolcanicEmissions selectedParameter "🌋" "Volcanic emissions" <|
-                    String.fromFloat parameters.volcan_value
-                        ++ " GtC/year"
-                , viewParameterSummary BiologicalStorage selectedParameter "🛢" "Biological storage" <|
-                    String.fromFloat parameters.stockage_biologique_value
-                        ++ " Mt/year/ppm"
-                , viewParameterSummary ContinentalAlteration selectedParameter "⛰" "Continental alteration" <|
-                    String.fromFloat parameters.alteration_value
-                        ++ "% relatively to present-day"
-                ]
+                            else
+                                "sources & sinks"
+                      ]
+                    , case model.parametersForm.co2 of
+                        ParametersForm.Co2Constant ->
+                            [ viewParameterSummary Co2Concentration selectedParameter "💨" "CO2 concentration" <|
+                                String.fromFloat parameters.coo_concentr_value
+                                    ++ " ppm"
+                            ]
+
+                        ParametersForm.Co2SourcesAndSinks ->
+                            [ viewParameterSummary AnthropogenicEmissions selectedParameter "👨" "Anthropogenic emissions" <|
+                                String.fromFloat parameters.emit_anthro_coo_value
+                                    ++ " GtC/year"
+                            , viewParameterSummary VolcanicEmissions selectedParameter "🌋" "Volcanic emissions" <|
+                                String.fromFloat parameters.volcan_value
+                                    ++ " GtC/year"
+                            , viewParameterSummary BiologicalStorage selectedParameter "🛢" "Biological storage" <|
+                                String.fromFloat parameters.stockage_biologique_value
+                                    ++ " Mt/year/ppm"
+                            , viewParameterSummary ContinentalAlteration selectedParameter "⛰" "Continental alteration" <|
+                                String.fromFloat parameters.alteration_value
+                                    ++ "% relatively to present-day"
+                            ]
+                    ]
             , viewParameterSection "Climate feedbacks"
                 [ viewParameterSummary PlanetaryAlbedo selectedParameter "✨" "Planetary albedo" <|
                     if parameters.fixed_albedo then
@@ -321,7 +343,7 @@ viewParameterList model =
 
                     else
                         String.fromFloat parameters.puit_bio_value ++ "%"
-                , viewParameterSummary WaterVaporConcentration selectedParameter "☁️" "Water vapor concentration" <|
+                , viewParameterSummary WaterVaporConcentration selectedParameter "💧" "Water vapor concentration" <|
                     if parameters.fixed_eau then
                         String.fromFloat parameters.rapport_H2O_value
                             ++ "% of present-day"
@@ -418,8 +440,11 @@ viewEditing { editing, parametersForm } =
         Just Precession ->
             viewEditingPrecession parametersForm
 
-        Just Co2Concentration ->
+        Just Co2 ->
             viewEditingCo2 parametersForm
+
+        Just Co2Concentration ->
+            viewEditingCo2Concentration parametersForm
 
         Just AnthropogenicEmissions ->
             viewEditingAnthropogenicEmissions parametersForm
@@ -622,11 +647,38 @@ viewEditingCo2 parametersForm =
             [ Input.radio []
                 { onChange = ChangeCo2
                 , options =
-                    [ Input.option ParametersForm.Co2ConstantConcentration (text "Constant CO2 concentration")
+                    [ Input.option ParametersForm.Co2Constant (text "Constant CO2 concentration")
                     , Input.option ParametersForm.Co2SourcesAndSinks (text "Set the CO2 sources and sinks")
                     ]
                 , selected = Just parametersForm.co2
                 , label = Input.labelHidden "CO2 emissions"
+                }
+            ]
+        }
+
+
+viewEditingCo2Concentration : ParametersForm -> Element Msg
+viewEditingCo2Concentration parametersForm =
+    viewEditingParameter
+        { title = "CO2 concentration"
+        , form =
+            [ Input.radio []
+                { onChange = ChangeCo2Concentration
+                , options =
+                    [ Input.option ParametersForm.Co2ConcentrationPresentDay (text "Present-day value (405 ppm)")
+                    , Input.option ParametersForm.Co2ConcentrationPreIndustrial (text "Pre-industrial value (280 ppm)")
+                    , Input.option ParametersForm.Co2ConcentrationCretaceous (text "Cretaceous value (1500 ppm)")
+                    , Input.option ParametersForm.Co2ConcentrationEarthBeginning (text "Same as at the beginning of the Earth history (300\u{00A0}000 ppm)")
+                    , Input.option ParametersForm.Co2ConcentrationCustom (text "Other value")
+                    ]
+                , selected = Just parametersForm.co2Concentration
+                , label = Input.labelHidden "CO2 concentration"
+                }
+            , Input.text []
+                { onChange = ChangeCo2ConcentrationCustomValue
+                , text = parametersForm.co2ConcentrationCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "CO2 concentration (in ppm)"
                 }
             ]
         }

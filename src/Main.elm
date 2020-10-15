@@ -116,6 +116,8 @@ type Msg
     | ChangeBiologicalStorageCustomValue String
     | ChangeContinentalAlteration ParametersForm.ContinentalAlteration
     | ChangeContinentalAlterationCustomValue String
+    | ChangePlanetaryAlbedo ParametersForm.PlanetaryAlbedo
+    | ChangePlanetaryAlbedoCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -221,6 +223,14 @@ update msg model =
 
         ChangeContinentalAlterationCustomValue value ->
             { model | parametersForm = { parametersForm | continentalAlterationCustomValue = value } }
+                |> updateSimulation
+
+        ChangePlanetaryAlbedo value ->
+            { model | parametersForm = { parametersForm | planetaryAlbedo = value } }
+                |> updateSimulation
+
+        ChangePlanetaryAlbedoCustomValue value ->
+            { model | parametersForm = { parametersForm | planetaryAlbedoCustomValue = value } }
                 |> updateSimulation
 
 
@@ -830,17 +840,23 @@ viewEditingPlanetaryAlbedo parametersForm =
         { title = "Planetary albedo"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangePlanetaryAlbedo
                 , options =
                     [ Input.option ParametersForm.PlanetaryAlbedoComputed (text "Computed as a function of temperature, permitting the feedback")
-                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 33) (text "Constant as its present-day value (33%)")
-                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 33) (text "Constant as its pre-industrial value (33%)")
-                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 25) (text "Constant at the value of a soil (25%)")
-                    , Input.option (ParametersForm.PlanetaryAlbedoConstant 90) (text "Constant at the value of ice (90%)")
+                    , Input.option ParametersForm.PlanetaryAlbedoPresentDay (text "Constant as its present-day value (33%)")
+                    , Input.option ParametersForm.PlanetaryAlbedoPreIndustrial (text "Constant as its pre-industrial value (33%)")
+                    , Input.option ParametersForm.PlanetaryAlbedoSameAsSoil (text "Constant at the value of a soil (25%)")
+                    , Input.option ParametersForm.PlanetaryAlbedoSameAsIce (text "Constant at the value of ice (90%)")
                     , Input.option ParametersForm.PlanetaryAlbedoCustom (text "Constant at another value")
                     ]
                 , selected = Just parametersForm.planetaryAlbedo
                 , label = Input.labelHidden "Planetary albedo"
+                }
+            , Input.text []
+                { onChange = ChangePlanetaryAlbedoCustomValue
+                , text = parametersForm.planetaryAlbedoCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Planetary albedo (in %)"
                 }
             ]
         }

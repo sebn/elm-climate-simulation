@@ -129,7 +129,10 @@ type ContinentalAlteration
 
 type PlanetaryAlbedo
     = PlanetaryAlbedoComputed
-    | PlanetaryAlbedoConstant Float
+    | PlanetaryAlbedoPresentDay
+    | PlanetaryAlbedoPreIndustrial
+    | PlanetaryAlbedoSameAsSoil
+    | PlanetaryAlbedoSameAsIce
     | PlanetaryAlbedoCustom
 
 
@@ -208,11 +211,36 @@ toParameters parametersForm defaults =
     , debranche_biologie = defaults.debranche_biologie
     , fixed_ocean = defaults.fixed_ocean
     , debranche_ocean = defaults.debranche_ocean
-    , fixed_albedo = defaults.fixed_albedo
+    , fixed_albedo =
+        case parametersForm.planetaryAlbedo of
+            PlanetaryAlbedoComputed ->
+                False
+
+            _ ->
+                True
     , rapport_H2O_value = defaults.rapport_H2O_value
     , puit_bio_value = defaults.puit_bio_value
     , puit_oce_value = defaults.puit_oce_value
-    , albedo_value = defaults.albedo_value
+    , albedo_value =
+        Maybe.withDefault defaults.albedo_value <|
+            case parametersForm.planetaryAlbedo of
+                PlanetaryAlbedoComputed ->
+                    Nothing
+
+                PlanetaryAlbedoPresentDay ->
+                    Just 33
+
+                PlanetaryAlbedoPreIndustrial ->
+                    Just 33
+
+                PlanetaryAlbedoSameAsSoil ->
+                    Just 25
+
+                PlanetaryAlbedoSameAsIce ->
+                    Just 90
+
+                PlanetaryAlbedoCustom ->
+                    String.toFloat parametersForm.planetaryAlbedoCustomValue
     , coo_concentr_value =
         case parametersForm.co2Concentration of
             Co2ConcentrationPresentDay ->

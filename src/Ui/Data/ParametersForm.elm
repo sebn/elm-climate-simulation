@@ -297,7 +297,15 @@ toParameters parametersForm defaults =
                 parametersForm.precessionCustomValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.precession_value
-    , alteration_value = defaults.alteration_value
+    , alteration_value =
+        case parametersForm.continentalAlteration of
+            ContinentalAlterationPresentDay ->
+                100
+
+            ContinentalAlterationCustom ->
+                parametersForm.continentalAlterationCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.alteration_value
     , emit_anthro_coo_value =
         case parametersForm.anthropogenicEmissions of
             AnthropogenicEmissionsNull ->

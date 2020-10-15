@@ -114,6 +114,8 @@ type Msg
     | ChangeVolcanicEmissionsCustomValue String
     | ChangeBiologicalStorage ParametersForm.BiologicalStorage
     | ChangeBiologicalStorageCustomValue String
+    | ChangeContinentalAlteration ParametersForm.ContinentalAlteration
+    | ChangeContinentalAlterationCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -211,6 +213,14 @@ update msg model =
 
         ChangeBiologicalStorageCustomValue value ->
             { model | parametersForm = { parametersForm | biologicalStorageCustomValue = value } }
+                |> updateSimulation
+
+        ChangeContinentalAlteration value ->
+            { model | parametersForm = { parametersForm | continentalAlteration = value } }
+                |> updateSimulation
+
+        ChangeContinentalAlterationCustomValue value ->
+            { model | parametersForm = { parametersForm | continentalAlterationCustomValue = value } }
                 |> updateSimulation
 
 
@@ -796,13 +806,19 @@ viewEditingContinentalAlteration parametersForm =
         { title = "Continental alteration"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeContinentalAlteration
                 , options =
                     [ Input.option ParametersForm.ContinentalAlterationPresentDay (text "Same as present-day (100%)")
                     , Input.option ParametersForm.ContinentalAlterationCustom (text "Other value")
                     ]
                 , selected = Just parametersForm.continentalAlteration
                 , label = Input.labelHidden "Continental alteration"
+                }
+            , Input.text []
+                { onChange = ChangeContinentalAlterationCustomValue
+                , text = parametersForm.continentalAlterationCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Continental alteration (in %)"
                 }
             ]
         }

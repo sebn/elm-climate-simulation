@@ -298,7 +298,21 @@ toParameters parametersForm defaults =
                     |> String.toFloat
                     |> Maybe.withDefault defaults.precession_value
     , alteration_value = defaults.alteration_value
-    , emit_anthro_coo_value = defaults.emit_anthro_coo_value
+    , emit_anthro_coo_value =
+        case parametersForm.anthropogenicEmissions of
+            AnthropogenicEmissionsNull ->
+                0
+
+            AnthropogenicEmissionsPresentDay ->
+                8
+
+            AnthropogenicEmissionsTwicePresentDay ->
+                16
+
+            AnthropogenicEmissionsCustom ->
+                parametersForm.anthropogenicEmissionsCustomValue
+                    |> String.toFloat
+                    |> Maybe.withDefault defaults.emit_anthro_coo_value
     , volcan_value = defaults.volcan_value
     , stockage_biologique_value = defaults.stockage_biologique_value
     }

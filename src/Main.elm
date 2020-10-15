@@ -108,6 +108,8 @@ type Msg
     | ChangeCo2 ParametersForm.Co2
     | ChangeCo2Concentration ParametersForm.Co2Concentration
     | ChangeCo2ConcentrationCustomValue String
+    | ChangeAnthropogenicEmissions ParametersForm.AnthropogenicEmissions
+    | ChangeAnthropogenicEmissionsCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -181,6 +183,14 @@ update msg model =
 
         ChangeCo2ConcentrationCustomValue value ->
             { model | parametersForm = { parametersForm | co2ConcentrationCustomValue = value } }
+                |> updateSimulation
+
+        ChangeAnthropogenicEmissions value ->
+            { model | parametersForm = { parametersForm | anthropogenicEmissions = value } }
+                |> updateSimulation
+
+        ChangeAnthropogenicEmissionsCustomValue value ->
+            { model | parametersForm = { parametersForm | anthropogenicEmissionsCustomValue = value } }
                 |> updateSimulation
 
 
@@ -690,7 +700,7 @@ viewEditingAnthropogenicEmissions parametersForm =
         { title = "Anthropogenic emissions"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeAnthropogenicEmissions
                 , options =
                     [ Input.option ParametersForm.AnthropogenicEmissionsNull (text "Null (0 GtC/year)")
                     , Input.option ParametersForm.AnthropogenicEmissionsPresentDay (text "Present-day value (8 GtC/year)")
@@ -699,6 +709,12 @@ viewEditingAnthropogenicEmissions parametersForm =
                     ]
                 , selected = Just parametersForm.anthropogenicEmissions
                 , label = Input.labelHidden "Anthropogenic emissions"
+                }
+            , Input.text []
+                { onChange = ChangeAnthropogenicEmissionsCustomValue
+                , text = parametersForm.anthropogenicEmissionsCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Anthropogenic emissions (in GtC/year)"
                 }
             ]
         }

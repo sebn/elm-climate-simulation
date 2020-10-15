@@ -104,6 +104,7 @@ type Msg
     | ChangeObliquityCustomValue String
     | ChangePrecession ParametersForm.Precession
     | ChangePrecessionCustomValue String
+    | ChangeCo2 ParametersForm.Co2
 
 
 update : Msg -> Model -> Model
@@ -165,6 +166,10 @@ update msg model =
 
         ChangePrecessionCustomValue value ->
             { model | parametersForm = { parametersForm | precessionCustomValue = value } }
+                |> updateSimulation
+
+        ChangeCo2 value ->
+            { model | parametersForm = { parametersForm | co2 = value } }
                 |> updateSimulation
 
 
@@ -414,7 +419,7 @@ viewEditing { editing, parametersForm } =
             viewEditingPrecession parametersForm
 
         Just Co2Concentration ->
-            viewEditingCo2Concentration parametersForm
+            viewEditingCo2 parametersForm
 
         Just AnthropogenicEmissions ->
             viewEditingAnthropogenicEmissions parametersForm
@@ -609,18 +614,18 @@ viewEditingPrecession parametersForm =
         }
 
 
-viewEditingCo2Concentration : ParametersForm -> Element Msg
-viewEditingCo2Concentration parametersForm =
+viewEditingCo2 : ParametersForm -> Element Msg
+viewEditingCo2 parametersForm =
     viewEditingParameter
         { title = "CO2 emissions"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeCo2
                 , options =
-                    [ Input.option ParametersForm.Co2EmissionsConstant (text "Directly set the CO2 concentration, which will remain constant throughout the whole simulation")
-                    , Input.option ParametersForm.Co2EmissionsComputed (text "Set the CO2 sources and sinks")
+                    [ Input.option ParametersForm.Co2ConstantConcentration (text "Constant CO2 concentration")
+                    , Input.option ParametersForm.Co2SourcesAndSinks (text "Set the CO2 sources and sinks")
                     ]
-                , selected = Just parametersForm.co2Emissions
+                , selected = Just parametersForm.co2
                 , label = Input.labelHidden "CO2 emissions"
                 }
             ]

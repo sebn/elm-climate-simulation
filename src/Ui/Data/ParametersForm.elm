@@ -1,8 +1,8 @@
 module Ui.Data.ParametersForm exposing
     ( AnthropogenicEmissions(..)
     , BiologicalStorage(..)
+    , Co2(..)
     , Co2Concentration(..)
-    , Co2Emissions(..)
     , ContinentalAlteration(..)
     , EarthSunDistance(..)
     , Excentricity(..)
@@ -36,7 +36,7 @@ type alias ParametersForm =
     , obliquityCustomValue : String
     , precession : Precession
     , precessionCustomValue : String
-    , co2Emissions : Co2Emissions
+    , co2 : Co2
     , co2Concentration : Co2Concentration
     , co2ConcentrationCustomValue : String
     , anthropogenicEmissions : AnthropogenicEmissions
@@ -90,9 +90,9 @@ type Precession
     | PrecessionCustom
 
 
-type Co2Emissions
-    = Co2EmissionsConstant
-    | Co2EmissionsComputed
+type Co2
+    = Co2ConstantConcentration
+    | Co2SourcesAndSinks
 
 
 type Co2Concentration
@@ -167,7 +167,7 @@ fromParameters parameters =
     , obliquityCustomValue = parameters.obliquite_value |> String.fromFloat
     , precession = PrecessionCustom
     , precessionCustomValue = parameters.precession_value |> String.fromFloat
-    , co2Emissions = Co2EmissionsComputed
+    , co2 = Co2SourcesAndSinks
     , co2Concentration = Co2ConcentrationCustom
     , co2ConcentrationCustomValue = parameters.coo_concentr_value |> String.fromFloat
     , anthropogenicEmissions = AnthropogenicEmissionsCustom
@@ -198,7 +198,13 @@ toParameters parametersForm defaults =
             |> Maybe.andThen (Just << Duration.fromYears)
             |> Maybe.withDefault defaults.duration
     , fixed_eau = defaults.fixed_eau
-    , fixed_concentration = defaults.fixed_concentration
+    , fixed_concentration =
+        case parametersForm.co2 of
+            Co2ConstantConcentration ->
+                True
+
+            Co2SourcesAndSinks ->
+                False
     , debranche_biologie = defaults.debranche_biologie
     , fixed_ocean = defaults.fixed_ocean
     , debranche_ocean = defaults.debranche_ocean

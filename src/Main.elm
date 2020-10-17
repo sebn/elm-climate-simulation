@@ -13,7 +13,6 @@ import Element.Events
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
-import Html.Attributes
 import LineChart as LineChart
 import LineChart.Area as Area
 import LineChart.Axis as Axis
@@ -82,7 +81,7 @@ init =
             , results = []
             }
     , parametersForm = ParametersForm.fromParameters parameters
-    , editing = Just WaterVaporConcentration
+    , editing = Nothing
     }
 
 
@@ -91,8 +90,7 @@ init =
 
 
 type Msg
-    = NoOp
-    | EditParameter (Maybe ParameterName)
+    = EditParameter (Maybe ParameterName)
     | ChangeInitialState Parameters.InitialState
     | ChangeSimulationLength String
     | ChangeEarthSunDistance ParametersForm.EarthSunDistance
@@ -133,9 +131,6 @@ update msg model =
             model.parametersForm
     in
     case msg of
-        NoOp ->
-            model
-
         EditParameter editing ->
             { model | editing = editing }
 
@@ -292,16 +287,41 @@ view model =
         column
             [ Element.width Element.fill
             , Element.height Element.fill
+            , Element.clip
             ]
             [ el [ Element.width Element.fill ] <|
                 viewHeader model.simulation
             , row
                 [ Element.height Element.fill
                 , Element.width Element.fill
+                , Element.clip
                 ]
-                [ viewParameterList model
-                , viewEditing model
-                , viewCharts model.simulation
+                [ el
+                    [ Element.width
+                        (Element.fill
+                            |> Element.maximum 450
+                        )
+                    , Element.height Element.fill
+                    ]
+                    (viewParameterList model)
+                , case model.editing of
+                    Nothing ->
+                        text ""
+
+                    Just parameterName ->
+                        el
+                            [ Element.width
+                                (Element.fill
+                                    |> Element.maximum 350
+                                )
+                            , Element.height Element.fill
+                            ]
+                            (viewEditing parameterName model.parametersForm)
+                , el
+                    [ Element.width <| Element.fill
+                    , Element.height Element.fill
+                    ]
+                    (viewCharts model.simulation)
                 ]
             ]
 
@@ -333,15 +353,15 @@ viewParameterList model =
             model.editing
     in
     column
-        [ Element.width <| Element.fillPortion 1
+        [ Element.width Element.fill
         , Element.height Element.fill
         , Background.color colorLightGray
         ]
         [ column
             [ Element.width Element.fill
             , Element.height Element.fill
-            , Element.padding 20
-            , Element.spacing 20
+            , Element.paddingXY 0 20
+            , Element.clipX
             , Element.scrollbarY
             ]
             [ viewParameterSummary InitialState selectedParameter "📅" "Initial state" <|
@@ -439,18 +459,25 @@ viewParameterSection : String -> List (Element Msg) -> Element Msg
 viewParameterSection title contents =
     column
         [ Element.width Element.fill
-        , Element.spacing 10
         ]
         [ el
             [ Element.width Element.fill
-            , Element.paddingXY 0 10
-            , Border.widthEach { top = 1, right = 0, bottom = 0, left = 0 }
-            , Border.color colorGray
-            , Font.size 14
+            , Element.paddingEach
+                { top = 20, right = 10, bottom = 0, left = 10 }
             ]
           <|
-            text (title ++ ":")
-        , column [ Element.spacing 20 ]
+            el
+                [ Element.width Element.fill
+                , Element.paddingXY 0 10
+                , Border.widthEach { top = 1, right = 0, bottom = 0, left = 0 }
+                , Border.color colorGray
+                , Font.size 14
+                ]
+            <|
+                text (title ++ ":")
+        , column
+            [ Element.width Element.fill
+            ]
             contents
         ]
 
@@ -461,12 +488,12 @@ viewParameterSummary parameterName selectedParameter icon label value =
         isSelected =
             selectedParameter == Just parameterName
 
-        selectedBackgroundColor =
-            if isSelected then
+        highlightedWhen condition =
+            if condition then
                 Background.color colorWhite
 
             else
-                noAttribute
+                Background.color colorLightGray
 
         toggleEditingOnClick =
             Element.Events.onClick
@@ -480,8 +507,14 @@ viewParameterSummary parameterName selectedParameter icon label value =
                 )
     in
     Element.row
-        [ Element.spacing 5
-        , selectedBackgroundColor
+        [ Element.width Element.fill
+        , Element.spacing 5
+        , Element.padding 10
+        , highlightedWhen isSelected
+        , Element.pointer
+        , Element.mouseOver
+            [ highlightedWhen True
+            ]
         , toggleEditingOnClick
         ]
         [ el [ Element.alignTop ] (text icon)
@@ -493,61 +526,58 @@ viewParameterSummary parameterName selectedParameter icon label value =
         ]
 
 
-viewEditing : Model -> Element Msg
-viewEditing { editing, parametersForm } =
-    case editing of
-        Nothing ->
-            text ""
-
-        Just InitialState ->
+viewEditing : ParameterName -> ParametersForm -> Element Msg
+viewEditing parameterName parametersForm =
+    case parameterName of
+        InitialState ->
             viewEditingInitialState parametersForm
 
-        Just SimulationLength ->
+        SimulationLength ->
             viewEditingSimulationLength parametersForm
 
-        Just EarthSunDistance ->
+        EarthSunDistance ->
             viewEditingEarthSunDistance parametersForm
 
-        Just SolarPower ->
+        SolarPower ->
             viewEditingSolarPower parametersForm
 
-        Just Excentricity ->
+        Excentricity ->
             viewEditingExcentricity parametersForm
 
-        Just Obliquity ->
+        Obliquity ->
             viewEditingObliquity parametersForm
 
-        Just Precession ->
+        Precession ->
             viewEditingPrecession parametersForm
 
-        Just Co2 ->
+        Co2 ->
             viewEditingCo2 parametersForm
 
-        Just Co2Concentration ->
+        Co2Concentration ->
             viewEditingCo2Concentration parametersForm
 
-        Just AnthropogenicEmissions ->
+        AnthropogenicEmissions ->
             viewEditingAnthropogenicEmissions parametersForm
 
-        Just VolcanicEmissions ->
+        VolcanicEmissions ->
             viewEditingVolcanicEmissions parametersForm
 
-        Just BiologicalStorage ->
+        BiologicalStorage ->
             viewEditingBiologicalStorage parametersForm
 
-        Just ContinentalAlteration ->
+        ContinentalAlteration ->
             viewEditingContinentalAlteration parametersForm
 
-        Just PlanetaryAlbedo ->
+        PlanetaryAlbedo ->
             viewEditingPlanetaryAlbedo parametersForm
 
-        Just OceanicCarbonSink ->
+        OceanicCarbonSink ->
             viewEditingOceanicCarbonSink parametersForm
 
-        Just VegetationCarbonSink ->
+        VegetationCarbonSink ->
             viewEditingVegetationCarbonSink parametersForm
 
-        Just WaterVaporConcentration ->
+        WaterVaporConcentration ->
             viewEditingWaterVaporConcentration parametersForm
 
 
@@ -973,13 +1003,16 @@ viewEditingParameter : { title : String, form : List (Element Msg) } -> Element 
 viewEditingParameter { title, form } =
     column
         [ Element.height Element.fill
-        , Element.width (Element.fillPortion 1)
+        , Element.width Element.fill
+        , Element.paddingXY 20 30
+        , Element.scrollbarY
         , Background.color colorGray
         ]
         [ el [] (text title)
         , column
             [ Element.width Element.fill
             , Element.height Element.fill
+            , Element.clipX
             ]
             form
         ]
@@ -987,55 +1020,60 @@ viewEditingParameter { title, form } =
 
 viewCharts : ClimateSimulation -> Element Msg
 viewCharts sv =
-    Element.wrappedRow
-        [ Element.width <| Element.fillPortion 2
+    Element.el
+        [ Element.width Element.fill
         , Element.height Element.fill
-        , Element.padding 20
-        , Element.scrollbars
+        , Element.paddingXY 0 30
+        , Element.clipX
+        , Element.scrollbarY
         ]
-        [ viewChart
-            { id = "sea-level-chart"
-            , title = "Sea level relatively to pre-industrial (m)"
-            , dots = []
-            , timeInYears = identity
-            , value = identity
-            }
-        , viewChart
-            { id = "albedo-chart"
-            , title = "Albedo %"
-            , dots = sv.results
-            , timeInYears = State.timeInYears
-            , value = State.albedoPercentage
-            }
-        , viewChart
-            { id = "co2-concentration-chart"
-            , title = "CO2 concentration (ppm)"
-            , dots = sv.results
-            , timeInYears = State.timeInYears
-            , value = State.co2Concentration
-            }
-        , viewChart
-            { id = "ice-cap-latitude-chart"
-            , title = "Latitude down to which the Northern ice sheet extends (º)"
-            , dots = []
-            , timeInYears = identity
-            , value = identity
-            }
-        , viewChart
-            { id = "emissions-chart"
-            , title = "Emissions (Gt/year of Carbon)"
-            , dots = ClimateSimulation.co2Emissions sv
-            , timeInYears = .timeInYears
-            , value = .emissionInGtPerYear
-            }
-        , viewChart
-            { id = "temperature-chart"
-            , title = "Temperature (ºC)"
-            , dots = sv.results
-            , timeInYears = State.timeInYears
-            , value = State.celsiusTemperature
-            }
-        ]
+    <|
+        Element.wrappedRow
+            [ Element.width Element.fill
+            ]
+            [ viewChart
+                { id = "sea-level-chart"
+                , title = "Sea level relatively to pre-industrial (m)"
+                , dots = []
+                , timeInYears = identity
+                , value = identity
+                }
+            , viewChart
+                { id = "albedo-chart"
+                , title = "Albedo %"
+                , dots = sv.results
+                , timeInYears = State.timeInYears
+                , value = State.albedoPercentage
+                }
+            , viewChart
+                { id = "co2-concentration-chart"
+                , title = "CO2 concentration (ppm)"
+                , dots = sv.results
+                , timeInYears = State.timeInYears
+                , value = State.co2Concentration
+                }
+            , viewChart
+                { id = "ice-cap-latitude-chart"
+                , title = "Latitude down to which the Northern ice sheet extends (º)"
+                , dots = []
+                , timeInYears = identity
+                , value = identity
+                }
+            , viewChart
+                { id = "emissions-chart"
+                , title = "Emissions (Gt/year of Carbon)"
+                , dots = ClimateSimulation.co2Emissions sv
+                , timeInYears = .timeInYears
+                , value = .emissionInGtPerYear
+                }
+            , viewChart
+                { id = "temperature-chart"
+                , title = "Temperature (ºC)"
+                , dots = sv.results
+                , timeInYears = State.timeInYears
+                , value = State.celsiusTemperature
+                }
+            ]
 
 
 type alias ChartConfig a =
@@ -1073,11 +1111,6 @@ viewChart config =
                 [ LineChart.line Color.red Dots.none "" config.dots
                 ]
         ]
-
-
-noAttribute : Element.Attribute msg
-noAttribute =
-    Element.htmlAttribute (Html.Attributes.class "")
 
 
 

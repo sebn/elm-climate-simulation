@@ -82,7 +82,7 @@ init =
             , results = []
             }
     , parametersForm = ParametersForm.fromParameters parameters
-    , editing = Just OceanicCarbonSink
+    , editing = Just WaterVaporConcentration
     }
 
 
@@ -122,6 +122,8 @@ type Msg
     | ChangeOceanicCarbonSinkCustomValue String
     | ChangeVegetationCarbonSink ParametersForm.VegetationCarbonSink
     | ChangeVegetationCarbonSinkCustomValue String
+    | ChangeWaterVaporConcentration ParametersForm.WaterVaporConcentration
+    | ChangeWaterVaporConcentrationCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -251,6 +253,14 @@ update msg model =
 
         ChangeVegetationCarbonSinkCustomValue value ->
             { model | parametersForm = { parametersForm | vegetationCarbonSinkCustomValue = value } }
+                |> updateSimulation
+
+        ChangeWaterVaporConcentration value ->
+            { model | parametersForm = { parametersForm | waterVaporConcentration = value } }
+                |> updateSimulation
+
+        ChangeWaterVaporConcentrationCustomValue value ->
+            { model | parametersForm = { parametersForm | waterVaporConcentrationCustomValue = value } }
                 |> updateSimulation
 
 
@@ -939,7 +949,7 @@ viewEditingWaterVaporConcentration parametersForm =
         { title = "Water vapor atmospheric concentration"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeWaterVaporConcentration
                 , options =
                     [ Input.option ParametersForm.WaterVaporConcentrationComputed (text "Computed as a function of temperature")
                     , Input.option ParametersForm.WaterVaporConcentrationConstantPresentDay (text "Constant at the present-day value (105.7%)")
@@ -947,7 +957,13 @@ viewEditingWaterVaporConcentration parametersForm =
                     , Input.option ParametersForm.WaterVaporConcentrationConstantCustom (text "Other value")
                     ]
                 , selected = Just parametersForm.waterVaporConcentration
-                , label = Input.labelHidden "Vegetation carbon sink"
+                , label = Input.labelHidden "Water vapor concentration (in %)"
+                }
+            , Input.text []
+                { onChange = ChangeWaterVaporConcentrationCustomValue
+                , text = parametersForm.waterVaporConcentrationCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Water vapor concentration (in %)"
                 }
             ]
         }

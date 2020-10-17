@@ -213,7 +213,18 @@ fromParameters parameters =
         else
             VegetationCarbonSinkCustom
     , vegetationCarbonSinkCustomValue = parameters.puit_bio_value |> String.fromFloat
-    , waterVaporConcentration = WaterVaporConcentrationConstantCustom
+    , waterVaporConcentration =
+        if not parameters.fixed_eau then
+            WaterVaporConcentrationComputed
+
+        else if parameters.rapport_H2O_value == 105.7 then
+            WaterVaporConcentrationConstantPresentDay
+
+        else if parameters.rapport_H2O_value == 100 then
+            WaterVaporConcentrationConstantPreIndustrial
+
+        else
+            WaterVaporConcentrationConstantCustom
     , waterVaporConcentrationCustomValue = parameters.rapport_H2O_value |> String.fromFloat
     }
 
@@ -226,7 +237,8 @@ toParameters parametersForm defaults =
             |> String.toInt
             |> Maybe.andThen (Just << Duration.fromYears)
             |> Maybe.withDefault defaults.duration
-    , fixed_eau = defaults.fixed_eau
+    , fixed_eau =
+        parametersForm.waterVaporConcentration /= WaterVaporConcentrationComputed
     , fixed_concentration =
         case parametersForm.co2 of
             Co2Constant ->
@@ -262,7 +274,10 @@ toParameters parametersForm defaults =
 
             _ ->
                 True
-    , rapport_H2O_value = defaults.rapport_H2O_value
+    , rapport_H2O_value =
+        parametersForm.waterVaporConcentrationCustomValue
+            |> String.toFloat
+            |> Maybe.withDefault defaults.rapport_H2O_value
     , puit_bio_value =
         parametersForm.vegetationCarbonSinkCustomValue
             |> String.toFloat

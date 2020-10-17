@@ -160,28 +160,142 @@ fromParameters : Parameters -> ParametersForm
 fromParameters parameters =
     { initialState = parameters.initialState
     , simulationLength = parameters.duration |> Duration.intoYears |> String.fromInt
-    , earthSunDistance = EarthSunDistanceCustom
+    , earthSunDistance =
+        if parameters.distance_ts_value == 100 then
+            EarthSunDistancePresentDay
+
+        else
+            EarthSunDistanceCustom
     , earthSunDistanceCustomValue = parameters.distance_ts_value |> String.fromFloat
-    , solarPower = SolarPowerCustom
+    , solarPower =
+        if parameters.puissance_soleil_value == 100 then
+            SolarPowerPresentDay
+
+        else if parameters.puissance_soleil_value == 70 then
+            SolarPowerEarthBeginning
+
+        else
+            SolarPowerCustom
     , solarPowerCustomValue = parameters.puissance_soleil_value |> String.fromFloat
-    , excentricity = ExcentricityCustom
+    , excentricity =
+        if parameters.excentricite_value == 0.0167 then
+            ExcentricityPresentDay
+
+        else if parameters.excentricite_value == 0 then
+            ExcentricityMinimum
+
+        else if parameters.excentricite_value == 0.06 then
+            ExcentricityMaximum
+
+        else
+            ExcentricityCustom
     , excentricityCustomValue = parameters.excentricite_value |> String.fromFloat
-    , obliquity = ObliquityCustom
+    , obliquity =
+        if parameters.obliquite_value == 23.5 then
+            ObliquityPresentDay
+
+        else if parameters.obliquite_value == 21.8 then
+            ObliquityMinimum
+
+        else if parameters.obliquite_value == 24.4 then
+            ObliquityMaximum
+
+        else
+            ObliquityCustom
     , obliquityCustomValue = parameters.obliquite_value |> String.fromFloat
-    , precession = PrecessionCustom
+    , precession =
+        if parameters.precession_value == 102.7 then
+            PrecessionPresentDay
+
+        else if parameters.precession_value == 90 then
+            PrecessionMinimum
+
+        else if parameters.precession_value == 270 then
+            PrecessionMaximum
+
+        else
+            PrecessionCustom
     , precessionCustomValue = parameters.precession_value |> String.fromFloat
-    , co2 = Co2SourcesAndSinks
-    , co2Concentration = Co2ConcentrationCustom
+    , co2 =
+        if parameters.fixed_concentration then
+            Co2Constant
+
+        else
+            Co2SourcesAndSinks
+    , co2Concentration =
+        if parameters.coo_concentr_value == 405 then
+            Co2ConcentrationPresentDay
+
+        else if parameters.coo_concentr_value == 280 then
+            Co2ConcentrationPreIndustrial
+
+        else if parameters.coo_concentr_value == 1500 then
+            Co2ConcentrationCretaceous
+
+        else if parameters.coo_concentr_value == 300000 then
+            Co2ConcentrationEarthBeginning
+
+        else
+            Co2ConcentrationCustom
     , co2ConcentrationCustomValue = parameters.coo_concentr_value |> String.fromFloat
-    , anthropogenicEmissions = AnthropogenicEmissionsCustom
+    , anthropogenicEmissions =
+        if parameters.emit_anthro_coo_value == 0 then
+            AnthropogenicEmissionsNull
+
+        else if parameters.emit_anthro_coo_value == 8 then
+            AnthropogenicEmissionsPresentDay
+
+        else if parameters.emit_anthro_coo_value == 16 then
+            AnthropogenicEmissionsTwicePresentDay
+
+        else
+            AnthropogenicEmissionsCustom
     , anthropogenicEmissionsCustomValue = parameters.emit_anthro_coo_value |> String.fromFloat
-    , volcanicEmissions = VolcanicEmissionsCustom
+    , volcanicEmissions =
+        if parameters.volcan_value == 0.083 then
+            VolcanicEmissionsPresentDay
+
+        else if parameters.volcan_value == 0.42 then
+            VolcanicEmissionsEarthBeginning
+
+        else
+            VolcanicEmissionsCustom
     , volcanicEmissionsCustomValue = parameters.volcan_value |> String.fromFloat
-    , biologicalStorage = BiologicalStorageCustom
+    , biologicalStorage =
+        if parameters.stockage_biologique_value == 0 then
+            BiologicalStoragePresentDay
+
+        else if parameters.stockage_biologique_value == 0.71 then
+            BiologicalStorageCarboniferous
+
+        else
+            BiologicalStorageCustom
     , biologicalStorageCustomValue = parameters.stockage_biologique_value |> String.fromFloat
-    , continentalAlteration = ContinentalAlterationCustom
+    , continentalAlteration =
+        if parameters.alteration_value == 100 then
+            ContinentalAlterationPresentDay
+
+        else
+            ContinentalAlterationCustom
     , continentalAlterationCustomValue = parameters.alteration_value |> String.fromFloat
-    , planetaryAlbedo = PlanetaryAlbedoCustom
+    , planetaryAlbedo =
+        if not parameters.fixed_albedo then
+            PlanetaryAlbedoComputed
+
+        else if parameters.albedo_value == 33 then
+            PlanetaryAlbedoPresentDay
+
+        else if parameters.albedo_value == 33 then
+            PlanetaryAlbedoPreIndustrial
+
+        else if parameters.albedo_value == 25 then
+            PlanetaryAlbedoSameAsSoil
+
+        else if parameters.albedo_value == 90 then
+            PlanetaryAlbedoSameAsIce
+
+        else
+            PlanetaryAlbedoCustom
     , planetaryAlbedoCustomValue = parameters.albedo_value |> String.fromFloat
     , oceanicCarbonSink =
         Debug.log "initial oceanicCarbonSink" <|

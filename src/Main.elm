@@ -120,6 +120,8 @@ type Msg
     | ChangePlanetaryAlbedoCustomValue String
     | ChangeOceanicCarbonSink ParametersForm.OceanicCarbonSink
     | ChangeOceanicCarbonSinkCustomValue String
+    | ChangeVegetationCarbonSink ParametersForm.VegetationCarbonSink
+    | ChangeVegetationCarbonSinkCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -241,6 +243,14 @@ update msg model =
 
         ChangeOceanicCarbonSinkCustomValue value ->
             { model | parametersForm = { parametersForm | oceanicCarbonSinkCustomValue = value } }
+                |> updateSimulation
+
+        ChangeVegetationCarbonSink value ->
+            { model | parametersForm = { parametersForm | vegetationCarbonSink = value } }
+                |> updateSimulation
+
+        ChangeVegetationCarbonSinkCustomValue value ->
+            { model | parametersForm = { parametersForm | vegetationCarbonSinkCustomValue = value } }
                 |> updateSimulation
 
 
@@ -904,7 +914,7 @@ viewEditingVegetationCarbonSink parametersForm =
         { title = "Vegetation carbon sink"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeVegetationCarbonSink
                 , options =
                     [ Input.option ParametersForm.VegetationCarbonSinkNeglected (text "Neglect the CO2 fluxes associated with the vegetation")
                     , Input.option ParametersForm.VegetationCarbonSinkAsToday (text "The vegetation mops up 35% of anthropogenic CO2 emissions, as today")
@@ -912,6 +922,12 @@ viewEditingVegetationCarbonSink parametersForm =
                     ]
                 , selected = Just parametersForm.vegetationCarbonSink
                 , label = Input.labelHidden "Vegetation carbon sink"
+                }
+            , Input.text []
+                { onChange = ChangeVegetationCarbonSinkCustomValue
+                , text = parametersForm.vegetationCarbonSinkCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Vegetation carbon sink (in %)"
                 }
             ]
         }

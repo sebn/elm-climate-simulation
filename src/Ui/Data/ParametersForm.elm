@@ -203,7 +203,15 @@ fromParameters parameters =
                 ( False, False, _ ) ->
                     OceanicCarbonSinkComputed
     , oceanicCarbonSinkCustomValue = parameters.puit_oce_value |> String.fromFloat
-    , vegetationCarbonSink = VegetationCarbonSinkCustom
+    , vegetationCarbonSink =
+        if parameters.debranche_biologie then
+            VegetationCarbonSinkNeglected
+
+        else if parameters.puit_bio_value == 105.7 then
+            VegetationCarbonSinkAsToday
+
+        else
+            VegetationCarbonSinkCustom
     , vegetationCarbonSinkCustomValue = parameters.puit_bio_value |> String.fromFloat
     , waterVaporConcentration = WaterVaporConcentrationConstantCustom
     , waterVaporConcentrationCustomValue = parameters.rapport_H2O_value |> String.fromFloat
@@ -226,7 +234,8 @@ toParameters parametersForm defaults =
 
             Co2SourcesAndSinks ->
                 False
-    , debranche_biologie = defaults.debranche_biologie
+    , debranche_biologie =
+        parametersForm.vegetationCarbonSink == VegetationCarbonSinkNeglected
     , fixed_ocean =
         Debug.log "fixed_ocean" <|
             case Debug.log "oceanicCarbonSink" parametersForm.oceanicCarbonSink of
@@ -254,7 +263,10 @@ toParameters parametersForm defaults =
             _ ->
                 True
     , rapport_H2O_value = defaults.rapport_H2O_value
-    , puit_bio_value = defaults.puit_bio_value
+    , puit_bio_value =
+        parametersForm.vegetationCarbonSinkCustomValue
+            |> String.toFloat
+            |> Maybe.withDefault defaults.puit_bio_value
     , puit_oce_value =
         Debug.log "puit_oce_value" <|
             case parametersForm.oceanicCarbonSink of

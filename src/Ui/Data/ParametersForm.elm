@@ -183,7 +183,25 @@ fromParameters parameters =
     , continentalAlterationCustomValue = parameters.alteration_value |> String.fromFloat
     , planetaryAlbedo = PlanetaryAlbedoCustom
     , planetaryAlbedoCustomValue = parameters.albedo_value |> String.fromFloat
-    , oceanicCarbonSink = OceanicCarbonSinkConstantCustom
+    , oceanicCarbonSink =
+        Debug.log "initial oceanicCarbonSink" <|
+            case
+                ( Debug.log "initial debranche_ocean" parameters.debranche_ocean
+                , Debug.log "initial fixed_ocean" parameters.fixed_ocean
+                , truncate <| Debug.log "initial puit_oce_value" parameters.puit_oce_value
+                )
+            of
+                ( True, _, _ ) ->
+                    OceanicCarbonSinkNeglected
+
+                ( False, True, 20 ) ->
+                    OceanicCarbonSinkConstantPresentDay
+
+                ( False, True, _ ) ->
+                    OceanicCarbonSinkConstantCustom
+
+                ( False, False, _ ) ->
+                    OceanicCarbonSinkComputed
     , oceanicCarbonSinkCustomValue = parameters.puit_oce_value |> String.fromFloat
     , vegetationCarbonSink = VegetationCarbonSinkCustom
     , vegetationCarbonSinkCustomValue = parameters.puit_bio_value |> String.fromFloat
@@ -209,8 +227,25 @@ toParameters parametersForm defaults =
             Co2SourcesAndSinks ->
                 False
     , debranche_biologie = defaults.debranche_biologie
-    , fixed_ocean = defaults.fixed_ocean
-    , debranche_ocean = defaults.debranche_ocean
+    , fixed_ocean =
+        Debug.log "fixed_ocean" <|
+            case Debug.log "oceanicCarbonSink" parametersForm.oceanicCarbonSink of
+                OceanicCarbonSinkNeglected ->
+                    False
+
+                OceanicCarbonSinkComputed ->
+                    False
+
+                _ ->
+                    True
+    , debranche_ocean =
+        Debug.log "debranche_ocean" <|
+            case parametersForm.oceanicCarbonSink of
+                OceanicCarbonSinkNeglected ->
+                    True
+
+                _ ->
+                    False
     , fixed_albedo =
         case parametersForm.planetaryAlbedo of
             PlanetaryAlbedoComputed ->
@@ -220,7 +255,16 @@ toParameters parametersForm defaults =
                 True
     , rapport_H2O_value = defaults.rapport_H2O_value
     , puit_bio_value = defaults.puit_bio_value
-    , puit_oce_value = defaults.puit_oce_value
+    , puit_oce_value =
+        Debug.log "puit_oce_value" <|
+            case parametersForm.oceanicCarbonSink of
+                OceanicCarbonSinkConstantPresentDay ->
+                    20
+
+                _ ->
+                    parametersForm.oceanicCarbonSinkCustomValue
+                        |> String.toFloat
+                        |> Maybe.withDefault defaults.puit_oce_value
     , albedo_value =
         Maybe.withDefault defaults.albedo_value <|
             case parametersForm.planetaryAlbedo of

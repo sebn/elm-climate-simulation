@@ -82,7 +82,7 @@ init =
             , results = []
             }
     , parametersForm = ParametersForm.fromParameters parameters
-    , editing = Just SimulationLength
+    , editing = Just OceanicCarbonSink
     }
 
 
@@ -118,6 +118,8 @@ type Msg
     | ChangeContinentalAlterationCustomValue String
     | ChangePlanetaryAlbedo ParametersForm.PlanetaryAlbedo
     | ChangePlanetaryAlbedoCustomValue String
+    | ChangeOceanicCarbonSink ParametersForm.OceanicCarbonSink
+    | ChangeOceanicCarbonSinkCustomValue String
 
 
 update : Msg -> Model -> Model
@@ -231,6 +233,14 @@ update msg model =
 
         ChangePlanetaryAlbedoCustomValue value ->
             { model | parametersForm = { parametersForm | planetaryAlbedoCustomValue = value } }
+                |> updateSimulation
+
+        ChangeOceanicCarbonSink value ->
+            { model | parametersForm = { parametersForm | oceanicCarbonSink = value } }
+                |> updateSimulation
+
+        ChangeOceanicCarbonSinkCustomValue value ->
+            { model | parametersForm = { parametersForm | oceanicCarbonSinkCustomValue = value } }
                 |> updateSimulation
 
 
@@ -868,7 +878,7 @@ viewEditingOceanicCarbonSink parametersForm =
         { title = "Oceanic carbon sink"
         , form =
             [ Input.radio []
-                { onChange = always NoOp
+                { onChange = ChangeOceanicCarbonSink
                 , options =
                     [ Input.option ParametersForm.OceanicCarbonSinkNeglected (text "Neglect the oceanic sink")
                     , Input.option ParametersForm.OceanicCarbonSinkComputed (text "The oceanic carbon sink is computed as a function of temperature")
@@ -877,6 +887,12 @@ viewEditingOceanicCarbonSink parametersForm =
                     ]
                 , selected = Just parametersForm.oceanicCarbonSink
                 , label = Input.labelHidden "Oceanic carbon sink"
+                }
+            , Input.text []
+                { onChange = ChangeOceanicCarbonSinkCustomValue
+                , text = parametersForm.oceanicCarbonSinkCustomValue
+                , placeholder = Nothing
+                , label = Input.labelAbove [] <| text "Oceanic carbon sink (in %)"
                 }
             ]
         }

@@ -4,6 +4,8 @@ module Ui.Data.ParametersForm exposing
     , Co2(..)
     , Co2Concentration(..)
     , ContinentalAlteration(..)
+    , CustomChoice
+    , CustomChoiceSelected(..)
     , EarthSunDistance(..)
     , Excentricity(..)
     , Obliquity(..)
@@ -26,68 +28,60 @@ import ClimateSimulation.Parameters as Parameters exposing (Parameters)
 type alias ParametersForm =
     { initialState : Parameters.InitialState
     , simulationLength : String
-    , earthSunDistance : EarthSunDistance
-    , earthSunDistanceCustomValue : String
-    , solarPower : SolarPower
-    , solarPowerCustomValue : String
-    , excentricity : Excentricity
-    , excentricityCustomValue : String
-    , obliquity : Obliquity
-    , obliquityCustomValue : String
-    , precession : Precession
-    , precessionCustomValue : String
+    , earthSunDistance : CustomChoice EarthSunDistance
+    , solarPower : CustomChoice SolarPower
+    , excentricity : CustomChoice Excentricity
+    , obliquity : CustomChoice Obliquity
+    , precession : CustomChoice Precession
     , co2 : Co2
-    , co2Concentration : Co2Concentration
-    , co2ConcentrationCustomValue : String
-    , anthropogenicEmissions : AnthropogenicEmissions
-    , anthropogenicEmissionsCustomValue : String
-    , volcanicEmissions : VolcanicEmissions
-    , volcanicEmissionsCustomValue : String
-    , biologicalStorage : BiologicalStorage
-    , biologicalStorageCustomValue : String
-    , continentalAlteration : ContinentalAlteration
-    , continentalAlterationCustomValue : String
-    , planetaryAlbedo : PlanetaryAlbedo
-    , planetaryAlbedoCustomValue : String
-    , oceanicCarbonSink : OceanicCarbonSink
-    , oceanicCarbonSinkCustomValue : String
-    , vegetationCarbonSink : VegetationCarbonSink
-    , vegetationCarbonSinkCustomValue : String
-    , waterVaporConcentration : WaterVaporConcentration
-    , waterVaporConcentrationCustomValue : String
+    , co2Concentration : CustomChoice Co2Concentration
+    , anthropogenicEmissions : CustomChoice AnthropogenicEmissions
+    , volcanicEmissions : CustomChoice VolcanicEmissions
+    , biologicalStorage : CustomChoice BiologicalStorage
+    , continentalAlteration : CustomChoice ContinentalAlteration
+    , planetaryAlbedo : CustomChoice PlanetaryAlbedo
+    , oceanicCarbonSink : CustomChoice OceanicCarbonSink
+    , vegetationCarbonSink : CustomChoice VegetationCarbonSink
+    , waterVaporConcentration : CustomChoice WaterVaporConcentration
     }
+
+
+type alias CustomChoice a =
+    { selected : CustomChoiceSelected a
+    , customValue : String
+    }
+
+
+type CustomChoiceSelected a
+    = Predefined a
+    | Custom
 
 
 type EarthSunDistance
     = EarthSunDistancePresentDay
-    | EarthSunDistanceCustom
 
 
 type SolarPower
     = SolarPowerPresentDay
     | SolarPowerEarthBeginning
-    | SolarPowerCustom
 
 
 type Excentricity
     = ExcentricityPresentDay
     | ExcentricityMinimum
     | ExcentricityMaximum
-    | ExcentricityCustom
 
 
 type Obliquity
     = ObliquityPresentDay
     | ObliquityMinimum
     | ObliquityMaximum
-    | ObliquityCustom
 
 
 type Precession
     = PrecessionPresentDay
     | PrecessionMinimum
     | PrecessionMaximum
-    | PrecessionCustom
 
 
 type Co2
@@ -100,31 +94,26 @@ type Co2Concentration
     | Co2ConcentrationPreIndustrial
     | Co2ConcentrationCretaceous
     | Co2ConcentrationEarthBeginning
-    | Co2ConcentrationCustom
 
 
 type AnthropogenicEmissions
     = AnthropogenicEmissionsNull
     | AnthropogenicEmissionsPresentDay
     | AnthropogenicEmissionsTwicePresentDay
-    | AnthropogenicEmissionsCustom
 
 
 type VolcanicEmissions
     = VolcanicEmissionsPresentDay
     | VolcanicEmissionsEarthBeginning
-    | VolcanicEmissionsCustom
 
 
 type BiologicalStorage
     = BiologicalStoragePresentDay
     | BiologicalStorageCarboniferous
-    | BiologicalStorageCustom
 
 
 type ContinentalAlteration
     = ContinentalAlterationPresentDay
-    | ContinentalAlterationCustom
 
 
 type PlanetaryAlbedo
@@ -133,27 +122,23 @@ type PlanetaryAlbedo
     | PlanetaryAlbedoPreIndustrial
     | PlanetaryAlbedoSameAsSoil
     | PlanetaryAlbedoSameAsIce
-    | PlanetaryAlbedoCustom
 
 
 type OceanicCarbonSink
     = OceanicCarbonSinkNeglected
     | OceanicCarbonSinkComputed
     | OceanicCarbonSinkConstantPresentDay
-    | OceanicCarbonSinkConstantCustom
 
 
 type VegetationCarbonSink
     = VegetationCarbonSinkNeglected
     | VegetationCarbonSinkAsToday
-    | VegetationCarbonSinkCustom
 
 
 type WaterVaporConcentration
     = WaterVaporConcentrationComputed
     | WaterVaporConcentrationConstantPresentDay
     | WaterVaporConcentrationConstantPreIndustrial
-    | WaterVaporConcentrationConstantCustom
 
 
 fromParameters : Parameters -> ParametersForm
@@ -161,61 +146,71 @@ fromParameters parameters =
     { initialState = parameters.initialState
     , simulationLength = parameters.duration |> Duration.intoYears |> String.fromInt
     , earthSunDistance =
-        if parameters.distance_ts_value == 100 then
-            EarthSunDistancePresentDay
+        { selected =
+            if parameters.distance_ts_value == 100 then
+                Predefined EarthSunDistancePresentDay
 
-        else
-            EarthSunDistanceCustom
-    , earthSunDistanceCustomValue = parameters.distance_ts_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.distance_ts_value |> String.fromFloat
+        }
     , solarPower =
-        if parameters.puissance_soleil_value == 100 then
-            SolarPowerPresentDay
+        { selected =
+            if parameters.puissance_soleil_value == 100 then
+                Predefined SolarPowerPresentDay
 
-        else if parameters.puissance_soleil_value == 70 then
-            SolarPowerEarthBeginning
+            else if parameters.puissance_soleil_value == 70 then
+                Predefined SolarPowerEarthBeginning
 
-        else
-            SolarPowerCustom
-    , solarPowerCustomValue = parameters.puissance_soleil_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.puissance_soleil_value |> String.fromFloat
+        }
     , excentricity =
-        if parameters.excentricite_value == 0.0167 then
-            ExcentricityPresentDay
+        { selected =
+            if parameters.excentricite_value == 0.0167 then
+                Predefined ExcentricityPresentDay
 
-        else if parameters.excentricite_value == 0 then
-            ExcentricityMinimum
+            else if parameters.excentricite_value == 0 then
+                Predefined ExcentricityMinimum
 
-        else if parameters.excentricite_value == 0.06 then
-            ExcentricityMaximum
+            else if parameters.excentricite_value == 0.06 then
+                Predefined ExcentricityMaximum
 
-        else
-            ExcentricityCustom
-    , excentricityCustomValue = parameters.excentricite_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.excentricite_value |> String.fromFloat
+        }
     , obliquity =
-        if parameters.obliquite_value == 23.5 then
-            ObliquityPresentDay
+        { selected =
+            if parameters.obliquite_value == 23.5 then
+                Predefined ObliquityPresentDay
 
-        else if parameters.obliquite_value == 21.8 then
-            ObliquityMinimum
+            else if parameters.obliquite_value == 21.8 then
+                Predefined ObliquityMinimum
 
-        else if parameters.obliquite_value == 24.4 then
-            ObliquityMaximum
+            else if parameters.obliquite_value == 24.4 then
+                Predefined ObliquityMaximum
 
-        else
-            ObliquityCustom
-    , obliquityCustomValue = parameters.obliquite_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.obliquite_value |> String.fromFloat
+        }
     , precession =
-        if parameters.precession_value == 102.7 then
-            PrecessionPresentDay
+        { selected =
+            if parameters.precession_value == 102.7 then
+                Predefined PrecessionPresentDay
 
-        else if parameters.precession_value == 90 then
-            PrecessionMinimum
+            else if parameters.precession_value == 90 then
+                Predefined PrecessionMinimum
 
-        else if parameters.precession_value == 270 then
-            PrecessionMaximum
+            else if parameters.precession_value == 270 then
+                Predefined PrecessionMaximum
 
-        else
-            PrecessionCustom
-    , precessionCustomValue = parameters.precession_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.precession_value |> String.fromFloat
+        }
     , co2 =
         if parameters.fixed_concentration then
             Co2Constant
@@ -223,123 +218,141 @@ fromParameters parameters =
         else
             Co2SourcesAndSinks
     , co2Concentration =
-        if parameters.coo_concentr_value == 405 then
-            Co2ConcentrationPresentDay
+        { selected =
+            if parameters.coo_concentr_value == 405 then
+                Predefined Co2ConcentrationPresentDay
 
-        else if parameters.coo_concentr_value == 280 then
-            Co2ConcentrationPreIndustrial
+            else if parameters.coo_concentr_value == 280 then
+                Predefined Co2ConcentrationPreIndustrial
 
-        else if parameters.coo_concentr_value == 1500 then
-            Co2ConcentrationCretaceous
+            else if parameters.coo_concentr_value == 1500 then
+                Predefined Co2ConcentrationCretaceous
 
-        else if parameters.coo_concentr_value == 300000 then
-            Co2ConcentrationEarthBeginning
+            else if parameters.coo_concentr_value == 300000 then
+                Predefined Co2ConcentrationEarthBeginning
 
-        else
-            Co2ConcentrationCustom
-    , co2ConcentrationCustomValue = parameters.coo_concentr_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.coo_concentr_value |> String.fromFloat
+        }
     , anthropogenicEmissions =
-        if parameters.emit_anthro_coo_value == 0 then
-            AnthropogenicEmissionsNull
+        { selected =
+            if parameters.emit_anthro_coo_value == 0 then
+                Predefined AnthropogenicEmissionsNull
 
-        else if parameters.emit_anthro_coo_value == 8 then
-            AnthropogenicEmissionsPresentDay
+            else if parameters.emit_anthro_coo_value == 8 then
+                Predefined AnthropogenicEmissionsPresentDay
 
-        else if parameters.emit_anthro_coo_value == 16 then
-            AnthropogenicEmissionsTwicePresentDay
+            else if parameters.emit_anthro_coo_value == 16 then
+                Predefined AnthropogenicEmissionsTwicePresentDay
 
-        else
-            AnthropogenicEmissionsCustom
-    , anthropogenicEmissionsCustomValue = parameters.emit_anthro_coo_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.emit_anthro_coo_value |> String.fromFloat
+        }
     , volcanicEmissions =
-        if parameters.volcan_value == 0.083 then
-            VolcanicEmissionsPresentDay
+        { selected =
+            if parameters.volcan_value == 0.083 then
+                Predefined VolcanicEmissionsPresentDay
 
-        else if parameters.volcan_value == 0.42 then
-            VolcanicEmissionsEarthBeginning
+            else if parameters.volcan_value == 0.42 then
+                Predefined VolcanicEmissionsEarthBeginning
 
-        else
-            VolcanicEmissionsCustom
-    , volcanicEmissionsCustomValue = parameters.volcan_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.volcan_value |> String.fromFloat
+        }
     , biologicalStorage =
-        if parameters.stockage_biologique_value == 0 then
-            BiologicalStoragePresentDay
+        { selected =
+            if parameters.stockage_biologique_value == 0 then
+                Predefined BiologicalStoragePresentDay
 
-        else if parameters.stockage_biologique_value == 0.71 then
-            BiologicalStorageCarboniferous
+            else if parameters.stockage_biologique_value == 0.71 then
+                Predefined BiologicalStorageCarboniferous
 
-        else
-            BiologicalStorageCustom
-    , biologicalStorageCustomValue = parameters.stockage_biologique_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.stockage_biologique_value |> String.fromFloat
+        }
     , continentalAlteration =
-        if parameters.alteration_value == 100 then
-            ContinentalAlterationPresentDay
+        { selected =
+            if parameters.alteration_value == 100 then
+                Predefined ContinentalAlterationPresentDay
 
-        else
-            ContinentalAlterationCustom
-    , continentalAlterationCustomValue = parameters.alteration_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.alteration_value |> String.fromFloat
+        }
     , planetaryAlbedo =
-        if not parameters.fixed_albedo then
-            PlanetaryAlbedoComputed
+        { selected =
+            if not parameters.fixed_albedo then
+                Predefined PlanetaryAlbedoComputed
 
-        else if parameters.albedo_value == 33 then
-            PlanetaryAlbedoPresentDay
+            else if parameters.albedo_value == 33 then
+                Predefined PlanetaryAlbedoPresentDay
 
-        else if parameters.albedo_value == 33 then
-            PlanetaryAlbedoPreIndustrial
+            else if parameters.albedo_value == 33 then
+                Predefined PlanetaryAlbedoPreIndustrial
 
-        else if parameters.albedo_value == 25 then
-            PlanetaryAlbedoSameAsSoil
+            else if parameters.albedo_value == 25 then
+                Predefined PlanetaryAlbedoSameAsSoil
 
-        else if parameters.albedo_value == 90 then
-            PlanetaryAlbedoSameAsIce
+            else if parameters.albedo_value == 90 then
+                Predefined PlanetaryAlbedoSameAsIce
 
-        else
-            PlanetaryAlbedoCustom
-    , planetaryAlbedoCustomValue = parameters.albedo_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.albedo_value |> String.fromFloat
+        }
     , oceanicCarbonSink =
-        Debug.log "initial oceanicCarbonSink" <|
-            case
-                ( Debug.log "initial debranche_ocean" parameters.debranche_ocean
-                , Debug.log "initial fixed_ocean" parameters.fixed_ocean
-                , truncate <| Debug.log "initial puit_oce_value" parameters.puit_oce_value
-                )
-            of
-                ( True, _, _ ) ->
-                    OceanicCarbonSinkNeglected
+        { selected =
+            Debug.log "initial oceanicCarbonSink" <|
+                case
+                    ( Debug.log "initial debranche_ocean" parameters.debranche_ocean
+                    , Debug.log "initial fixed_ocean" parameters.fixed_ocean
+                    , truncate <| Debug.log "initial puit_oce_value" parameters.puit_oce_value
+                    )
+                of
+                    ( True, _, _ ) ->
+                        Predefined OceanicCarbonSinkNeglected
 
-                ( False, True, 20 ) ->
-                    OceanicCarbonSinkConstantPresentDay
+                    ( False, True, 20 ) ->
+                        Predefined OceanicCarbonSinkConstantPresentDay
 
-                ( False, True, _ ) ->
-                    OceanicCarbonSinkConstantCustom
+                    ( False, True, _ ) ->
+                        Custom
 
-                ( False, False, _ ) ->
-                    OceanicCarbonSinkComputed
-    , oceanicCarbonSinkCustomValue = parameters.puit_oce_value |> String.fromFloat
+                    ( False, False, _ ) ->
+                        Predefined OceanicCarbonSinkComputed
+        , customValue = parameters.puit_oce_value |> String.fromFloat
+        }
     , vegetationCarbonSink =
-        if parameters.debranche_biologie then
-            VegetationCarbonSinkNeglected
+        { selected =
+            if parameters.debranche_biologie then
+                Predefined VegetationCarbonSinkNeglected
 
-        else if parameters.puit_bio_value == 105.7 then
-            VegetationCarbonSinkAsToday
+            else if parameters.puit_bio_value == 105.7 then
+                Predefined VegetationCarbonSinkAsToday
 
-        else
-            VegetationCarbonSinkCustom
-    , vegetationCarbonSinkCustomValue = parameters.puit_bio_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.puit_bio_value |> String.fromFloat
+        }
     , waterVaporConcentration =
-        if not parameters.fixed_eau then
-            WaterVaporConcentrationComputed
+        { selected =
+            if not parameters.fixed_eau then
+                Predefined WaterVaporConcentrationComputed
 
-        else if parameters.rapport_H2O_value == 105.7 then
-            WaterVaporConcentrationConstantPresentDay
+            else if parameters.rapport_H2O_value == 105.7 then
+                Predefined WaterVaporConcentrationConstantPresentDay
 
-        else if parameters.rapport_H2O_value == 100 then
-            WaterVaporConcentrationConstantPreIndustrial
+            else if parameters.rapport_H2O_value == 100 then
+                Predefined WaterVaporConcentrationConstantPreIndustrial
 
-        else
-            WaterVaporConcentrationConstantCustom
-    , waterVaporConcentrationCustomValue = parameters.rapport_H2O_value |> String.fromFloat
+            else
+                Custom
+        , customValue = parameters.rapport_H2O_value |> String.fromFloat
+        }
     }
 
 
@@ -352,7 +365,7 @@ toParameters parametersForm defaults =
             |> Maybe.andThen (Just << Duration.fromYears)
             |> Maybe.withDefault defaults.duration
     , fixed_eau =
-        parametersForm.waterVaporConcentration /= WaterVaporConcentrationComputed
+        parametersForm.waterVaporConcentration.selected /= Predefined WaterVaporConcentrationComputed
     , fixed_concentration =
         case parametersForm.co2 of
             Co2Constant ->
@@ -361,201 +374,201 @@ toParameters parametersForm defaults =
             Co2SourcesAndSinks ->
                 False
     , debranche_biologie =
-        parametersForm.vegetationCarbonSink == VegetationCarbonSinkNeglected
+        parametersForm.vegetationCarbonSink.selected == Predefined VegetationCarbonSinkNeglected
     , fixed_ocean =
         Debug.log "fixed_ocean" <|
-            case Debug.log "oceanicCarbonSink" parametersForm.oceanicCarbonSink of
-                OceanicCarbonSinkNeglected ->
+            case Debug.log "oceanicCarbonSink" parametersForm.oceanicCarbonSink.selected of
+                Predefined OceanicCarbonSinkNeglected ->
                     False
 
-                OceanicCarbonSinkComputed ->
+                Predefined OceanicCarbonSinkComputed ->
                     False
 
                 _ ->
                     True
     , debranche_ocean =
         Debug.log "debranche_ocean" <|
-            case parametersForm.oceanicCarbonSink of
-                OceanicCarbonSinkNeglected ->
+            case parametersForm.oceanicCarbonSink.selected of
+                Predefined OceanicCarbonSinkNeglected ->
                     True
 
                 _ ->
                     False
     , fixed_albedo =
-        case parametersForm.planetaryAlbedo of
-            PlanetaryAlbedoComputed ->
+        case parametersForm.planetaryAlbedo.selected of
+            Predefined PlanetaryAlbedoComputed ->
                 False
 
             _ ->
                 True
     , rapport_H2O_value =
-        parametersForm.waterVaporConcentrationCustomValue
+        parametersForm.waterVaporConcentration.customValue
             |> String.toFloat
             |> Maybe.withDefault defaults.rapport_H2O_value
     , puit_bio_value =
-        parametersForm.vegetationCarbonSinkCustomValue
+        parametersForm.vegetationCarbonSink.customValue
             |> String.toFloat
             |> Maybe.withDefault defaults.puit_bio_value
     , puit_oce_value =
         Debug.log "puit_oce_value" <|
-            case parametersForm.oceanicCarbonSink of
-                OceanicCarbonSinkConstantPresentDay ->
+            case parametersForm.oceanicCarbonSink.selected of
+                Predefined OceanicCarbonSinkConstantPresentDay ->
                     20
 
                 _ ->
-                    parametersForm.oceanicCarbonSinkCustomValue
+                    parametersForm.oceanicCarbonSink.customValue
                         |> String.toFloat
                         |> Maybe.withDefault defaults.puit_oce_value
     , albedo_value =
         Maybe.withDefault defaults.albedo_value <|
-            case parametersForm.planetaryAlbedo of
-                PlanetaryAlbedoComputed ->
+            case parametersForm.planetaryAlbedo.selected of
+                Predefined PlanetaryAlbedoComputed ->
                     Nothing
 
-                PlanetaryAlbedoPresentDay ->
+                Predefined PlanetaryAlbedoPresentDay ->
                     Just 33
 
-                PlanetaryAlbedoPreIndustrial ->
+                Predefined PlanetaryAlbedoPreIndustrial ->
                     Just 33
 
-                PlanetaryAlbedoSameAsSoil ->
+                Predefined PlanetaryAlbedoSameAsSoil ->
                     Just 25
 
-                PlanetaryAlbedoSameAsIce ->
+                Predefined PlanetaryAlbedoSameAsIce ->
                     Just 90
 
-                PlanetaryAlbedoCustom ->
-                    String.toFloat parametersForm.planetaryAlbedoCustomValue
+                Custom ->
+                    String.toFloat parametersForm.planetaryAlbedo.customValue
     , coo_concentr_value =
-        case parametersForm.co2Concentration of
-            Co2ConcentrationPresentDay ->
+        case parametersForm.co2Concentration.selected of
+            Predefined Co2ConcentrationPresentDay ->
                 405
 
-            Co2ConcentrationPreIndustrial ->
+            Predefined Co2ConcentrationPreIndustrial ->
                 280
 
-            Co2ConcentrationCretaceous ->
+            Predefined Co2ConcentrationCretaceous ->
                 1500
 
-            Co2ConcentrationEarthBeginning ->
+            Predefined Co2ConcentrationEarthBeginning ->
                 300000
 
-            Co2ConcentrationCustom ->
-                parametersForm.co2ConcentrationCustomValue
+            Custom ->
+                parametersForm.co2Concentration.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.coo_concentr_value
     , puissance_soleil_value =
-        case parametersForm.solarPower of
-            SolarPowerPresentDay ->
+        case parametersForm.solarPower.selected of
+            Predefined SolarPowerPresentDay ->
                 100
 
-            SolarPowerEarthBeginning ->
+            Predefined SolarPowerEarthBeginning ->
                 70
 
-            SolarPowerCustom ->
-                parametersForm.solarPowerCustomValue
+            Custom ->
+                parametersForm.solarPower.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.puissance_soleil_value
     , distance_ts_value =
-        case parametersForm.earthSunDistance of
-            EarthSunDistancePresentDay ->
+        case parametersForm.earthSunDistance.selected of
+            Predefined EarthSunDistancePresentDay ->
                 100
 
-            EarthSunDistanceCustom ->
-                parametersForm.earthSunDistanceCustomValue
+            Custom ->
+                parametersForm.earthSunDistance.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.distance_ts_value
     , obliquite_value =
-        case parametersForm.obliquity of
-            ObliquityPresentDay ->
+        case parametersForm.obliquity.selected of
+            Predefined ObliquityPresentDay ->
                 23.5
 
-            ObliquityMinimum ->
+            Predefined ObliquityMinimum ->
                 21.8
 
-            ObliquityMaximum ->
+            Predefined ObliquityMaximum ->
                 24.4
 
-            ObliquityCustom ->
-                parametersForm.obliquityCustomValue
+            Custom ->
+                parametersForm.obliquity.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.obliquite_value
     , excentricite_value =
-        case parametersForm.excentricity of
-            ExcentricityPresentDay ->
+        case parametersForm.excentricity.selected of
+            Predefined ExcentricityPresentDay ->
                 0.0167
 
-            ExcentricityMinimum ->
+            Predefined ExcentricityMinimum ->
                 0
 
-            ExcentricityMaximum ->
+            Predefined ExcentricityMaximum ->
                 0.06
 
-            ExcentricityCustom ->
-                parametersForm.excentricityCustomValue
+            Custom ->
+                parametersForm.excentricity.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.excentricite_value
     , precession_value =
-        case parametersForm.precession of
-            PrecessionPresentDay ->
+        case parametersForm.precession.selected of
+            Predefined PrecessionPresentDay ->
                 102.7
 
-            PrecessionMinimum ->
+            Predefined PrecessionMinimum ->
                 90
 
-            PrecessionMaximum ->
+            Predefined PrecessionMaximum ->
                 270
 
-            PrecessionCustom ->
-                parametersForm.precessionCustomValue
+            Custom ->
+                parametersForm.precession.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.precession_value
     , alteration_value =
-        case parametersForm.continentalAlteration of
-            ContinentalAlterationPresentDay ->
+        case parametersForm.continentalAlteration.selected of
+            Predefined ContinentalAlterationPresentDay ->
                 100
 
-            ContinentalAlterationCustom ->
-                parametersForm.continentalAlterationCustomValue
+            Custom ->
+                parametersForm.continentalAlteration.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.alteration_value
     , emit_anthro_coo_value =
-        case parametersForm.anthropogenicEmissions of
-            AnthropogenicEmissionsNull ->
+        case parametersForm.anthropogenicEmissions.selected of
+            Predefined AnthropogenicEmissionsNull ->
                 0
 
-            AnthropogenicEmissionsPresentDay ->
+            Predefined AnthropogenicEmissionsPresentDay ->
                 8
 
-            AnthropogenicEmissionsTwicePresentDay ->
+            Predefined AnthropogenicEmissionsTwicePresentDay ->
                 16
 
-            AnthropogenicEmissionsCustom ->
-                parametersForm.anthropogenicEmissionsCustomValue
+            Custom ->
+                parametersForm.anthropogenicEmissions.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.emit_anthro_coo_value
     , volcan_value =
-        case parametersForm.volcanicEmissions of
-            VolcanicEmissionsPresentDay ->
+        case parametersForm.volcanicEmissions.selected of
+            Predefined VolcanicEmissionsPresentDay ->
                 0.083
 
-            VolcanicEmissionsEarthBeginning ->
+            Predefined VolcanicEmissionsEarthBeginning ->
                 0.42
 
-            VolcanicEmissionsCustom ->
-                parametersForm.volcanicEmissionsCustomValue
+            Custom ->
+                parametersForm.volcanicEmissions.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.volcan_value
     , stockage_biologique_value =
-        case parametersForm.biologicalStorage of
-            BiologicalStoragePresentDay ->
+        case parametersForm.biologicalStorage.selected of
+            Predefined BiologicalStoragePresentDay ->
                 0
 
-            BiologicalStorageCarboniferous ->
+            Predefined BiologicalStorageCarboniferous ->
                 0.71
 
-            BiologicalStorageCustom ->
-                parametersForm.biologicalStorageCustomValue
+            Custom ->
+                parametersForm.biologicalStorage.customValue
                     |> String.toFloat
                     |> Maybe.withDefault defaults.stockage_biologique_value
     }

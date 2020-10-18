@@ -93,34 +93,34 @@ type Msg
     = EditParameter (Maybe ParameterName)
     | ChangeInitialState Parameters.InitialState
     | ChangeSimulationLength String
-    | ChangeEarthSunDistance ParametersForm.EarthSunDistance
+    | ChangeEarthSunDistance (ParametersForm.CustomChoiceSelected ParametersForm.EarthSunDistance)
     | ChangeEarthSunDistanceCustomValue String
-    | ChangeSolarPower ParametersForm.SolarPower
+    | ChangeSolarPower (ParametersForm.CustomChoiceSelected ParametersForm.SolarPower)
     | ChangeSolarPowerCustomValue String
-    | ChangeExcentricity ParametersForm.Excentricity
+    | ChangeExcentricity (ParametersForm.CustomChoiceSelected ParametersForm.Excentricity)
     | ChangeExcentricityCustomValue String
-    | ChangeObliquity ParametersForm.Obliquity
+    | ChangeObliquity (ParametersForm.CustomChoiceSelected ParametersForm.Obliquity)
     | ChangeObliquityCustomValue String
-    | ChangePrecession ParametersForm.Precession
+    | ChangePrecession (ParametersForm.CustomChoiceSelected ParametersForm.Precession)
     | ChangePrecessionCustomValue String
     | ChangeCo2 ParametersForm.Co2
-    | ChangeCo2Concentration ParametersForm.Co2Concentration
+    | ChangeCo2Concentration (ParametersForm.CustomChoiceSelected ParametersForm.Co2Concentration)
     | ChangeCo2ConcentrationCustomValue String
-    | ChangeAnthropogenicEmissions ParametersForm.AnthropogenicEmissions
+    | ChangeAnthropogenicEmissions (ParametersForm.CustomChoiceSelected ParametersForm.AnthropogenicEmissions)
     | ChangeAnthropogenicEmissionsCustomValue String
-    | ChangeVolcanicEmissions ParametersForm.VolcanicEmissions
+    | ChangeVolcanicEmissions (ParametersForm.CustomChoiceSelected ParametersForm.VolcanicEmissions)
     | ChangeVolcanicEmissionsCustomValue String
-    | ChangeBiologicalStorage ParametersForm.BiologicalStorage
+    | ChangeBiologicalStorage (ParametersForm.CustomChoiceSelected ParametersForm.BiologicalStorage)
     | ChangeBiologicalStorageCustomValue String
-    | ChangeContinentalAlteration ParametersForm.ContinentalAlteration
+    | ChangeContinentalAlteration (ParametersForm.CustomChoiceSelected ParametersForm.ContinentalAlteration)
     | ChangeContinentalAlterationCustomValue String
-    | ChangePlanetaryAlbedo ParametersForm.PlanetaryAlbedo
+    | ChangePlanetaryAlbedo (ParametersForm.CustomChoiceSelected ParametersForm.PlanetaryAlbedo)
     | ChangePlanetaryAlbedoCustomValue String
-    | ChangeOceanicCarbonSink ParametersForm.OceanicCarbonSink
+    | ChangeOceanicCarbonSink (ParametersForm.CustomChoiceSelected ParametersForm.OceanicCarbonSink)
     | ChangeOceanicCarbonSinkCustomValue String
-    | ChangeVegetationCarbonSink ParametersForm.VegetationCarbonSink
+    | ChangeVegetationCarbonSink (ParametersForm.CustomChoiceSelected ParametersForm.VegetationCarbonSink)
     | ChangeVegetationCarbonSinkCustomValue String
-    | ChangeWaterVaporConcentration ParametersForm.WaterVaporConcentration
+    | ChangeWaterVaporConcentration (ParametersForm.CustomChoiceSelected ParametersForm.WaterVaporConcentration)
     | ChangeWaterVaporConcentrationCustomValue String
 
 
@@ -129,6 +129,18 @@ update msg model =
     let
         parametersForm =
             model.parametersForm
+
+        { earthSunDistance, solarPower, excentricity, obliquity, precession } =
+            parametersForm
+
+        { co2Concentration, anthropogenicEmissions, volcanicEmissions } =
+            parametersForm
+
+        { biologicalStorage, continentalAlteration, planetaryAlbedo } =
+            parametersForm
+
+        { oceanicCarbonSink, vegetationCarbonSink, waterVaporConcentration } =
+            parametersForm
     in
     case msg of
         EditParameter editing ->
@@ -142,120 +154,120 @@ update msg model =
             { model | parametersForm = { parametersForm | simulationLength = simulationLength } }
                 |> updateSimulation
 
-        ChangeEarthSunDistance earthSunDistance ->
-            { model | parametersForm = { parametersForm | earthSunDistance = earthSunDistance } }
+        ChangeEarthSunDistance selected ->
+            { model | parametersForm = { parametersForm | earthSunDistance = { earthSunDistance | selected = selected } } }
                 |> updateSimulation
 
-        ChangeEarthSunDistanceCustomValue value ->
-            { model | parametersForm = { parametersForm | earthSunDistanceCustomValue = value } }
+        ChangeEarthSunDistanceCustomValue customValue ->
+            { model | parametersForm = { parametersForm | earthSunDistance = { earthSunDistance | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeSolarPower value ->
-            { model | parametersForm = { parametersForm | solarPower = value } }
+        ChangeSolarPower selected ->
+            { model | parametersForm = { parametersForm | solarPower = { solarPower | selected = selected } } }
                 |> updateSimulation
 
-        ChangeSolarPowerCustomValue value ->
-            { model | parametersForm = { parametersForm | solarPowerCustomValue = value } }
+        ChangeSolarPowerCustomValue customValue ->
+            { model | parametersForm = { parametersForm | solarPower = { solarPower | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeExcentricity excentricity ->
-            { model | parametersForm = { parametersForm | excentricity = excentricity } }
+        ChangeExcentricity selected ->
+            { model | parametersForm = { parametersForm | excentricity = { excentricity | selected = selected } } }
                 |> updateSimulation
 
-        ChangeExcentricityCustomValue value ->
-            { model | parametersForm = { parametersForm | excentricityCustomValue = value } }
+        ChangeExcentricityCustomValue customValue ->
+            { model | parametersForm = { parametersForm | excentricity = { excentricity | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeObliquity value ->
-            { model | parametersForm = { parametersForm | obliquity = value } }
+        ChangeObliquity selected ->
+            { model | parametersForm = { parametersForm | obliquity = { obliquity | selected = selected } } }
                 |> updateSimulation
 
-        ChangeObliquityCustomValue value ->
-            { model | parametersForm = { parametersForm | obliquityCustomValue = value } }
+        ChangeObliquityCustomValue customValue ->
+            { model | parametersForm = { parametersForm | obliquity = { obliquity | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangePrecession value ->
-            { model | parametersForm = { parametersForm | precession = value } }
+        ChangePrecession selected ->
+            { model | parametersForm = { parametersForm | precession = { precession | selected = selected } } }
                 |> updateSimulation
 
-        ChangePrecessionCustomValue value ->
-            { model | parametersForm = { parametersForm | precessionCustomValue = value } }
+        ChangePrecessionCustomValue customValue ->
+            { model | parametersForm = { parametersForm | precession = { precession | customValue = customValue } } }
                 |> updateSimulation
 
         ChangeCo2 value ->
             { model | parametersForm = { parametersForm | co2 = value } }
                 |> updateSimulation
 
-        ChangeCo2Concentration value ->
-            { model | parametersForm = { parametersForm | co2Concentration = value } }
+        ChangeCo2Concentration selected ->
+            { model | parametersForm = { parametersForm | co2Concentration = { co2Concentration | selected = selected } } }
                 |> updateSimulation
 
-        ChangeCo2ConcentrationCustomValue value ->
-            { model | parametersForm = { parametersForm | co2ConcentrationCustomValue = value } }
+        ChangeCo2ConcentrationCustomValue customValue ->
+            { model | parametersForm = { parametersForm | co2Concentration = { co2Concentration | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeAnthropogenicEmissions value ->
-            { model | parametersForm = { parametersForm | anthropogenicEmissions = value } }
+        ChangeAnthropogenicEmissions selected ->
+            { model | parametersForm = { parametersForm | anthropogenicEmissions = { anthropogenicEmissions | selected = selected } } }
                 |> updateSimulation
 
-        ChangeAnthropogenicEmissionsCustomValue value ->
-            { model | parametersForm = { parametersForm | anthropogenicEmissionsCustomValue = value } }
+        ChangeAnthropogenicEmissionsCustomValue customValue ->
+            { model | parametersForm = { parametersForm | anthropogenicEmissions = { anthropogenicEmissions | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeVolcanicEmissions value ->
-            { model | parametersForm = { parametersForm | volcanicEmissions = value } }
+        ChangeVolcanicEmissions selected ->
+            { model | parametersForm = { parametersForm | volcanicEmissions = { volcanicEmissions | selected = selected } } }
                 |> updateSimulation
 
-        ChangeVolcanicEmissionsCustomValue value ->
-            { model | parametersForm = { parametersForm | volcanicEmissionsCustomValue = value } }
+        ChangeVolcanicEmissionsCustomValue customValue ->
+            { model | parametersForm = { parametersForm | volcanicEmissions = { volcanicEmissions | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeBiologicalStorage value ->
-            { model | parametersForm = { parametersForm | biologicalStorage = value } }
+        ChangeBiologicalStorage selected ->
+            { model | parametersForm = { parametersForm | biologicalStorage = { biologicalStorage | selected = selected } } }
                 |> updateSimulation
 
-        ChangeBiologicalStorageCustomValue value ->
-            { model | parametersForm = { parametersForm | biologicalStorageCustomValue = value } }
+        ChangeBiologicalStorageCustomValue customValue ->
+            { model | parametersForm = { parametersForm | biologicalStorage = { biologicalStorage | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeContinentalAlteration value ->
-            { model | parametersForm = { parametersForm | continentalAlteration = value } }
+        ChangeContinentalAlteration selected ->
+            { model | parametersForm = { parametersForm | continentalAlteration = { continentalAlteration | selected = selected } } }
                 |> updateSimulation
 
-        ChangeContinentalAlterationCustomValue value ->
-            { model | parametersForm = { parametersForm | continentalAlterationCustomValue = value } }
+        ChangeContinentalAlterationCustomValue customValue ->
+            { model | parametersForm = { parametersForm | continentalAlteration = { continentalAlteration | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangePlanetaryAlbedo value ->
-            { model | parametersForm = { parametersForm | planetaryAlbedo = value } }
+        ChangePlanetaryAlbedo selected ->
+            { model | parametersForm = { parametersForm | planetaryAlbedo = { planetaryAlbedo | selected = selected } } }
                 |> updateSimulation
 
-        ChangePlanetaryAlbedoCustomValue value ->
-            { model | parametersForm = { parametersForm | planetaryAlbedoCustomValue = value } }
+        ChangePlanetaryAlbedoCustomValue customValue ->
+            { model | parametersForm = { parametersForm | planetaryAlbedo = { planetaryAlbedo | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeOceanicCarbonSink value ->
-            { model | parametersForm = { parametersForm | oceanicCarbonSink = value } }
+        ChangeOceanicCarbonSink selected ->
+            { model | parametersForm = { parametersForm | oceanicCarbonSink = { oceanicCarbonSink | selected = selected } } }
                 |> updateSimulation
 
-        ChangeOceanicCarbonSinkCustomValue value ->
-            { model | parametersForm = { parametersForm | oceanicCarbonSinkCustomValue = value } }
+        ChangeOceanicCarbonSinkCustomValue customValue ->
+            { model | parametersForm = { parametersForm | oceanicCarbonSink = { oceanicCarbonSink | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeVegetationCarbonSink value ->
-            { model | parametersForm = { parametersForm | vegetationCarbonSink = value } }
+        ChangeVegetationCarbonSink selected ->
+            { model | parametersForm = { parametersForm | vegetationCarbonSink = { vegetationCarbonSink | selected = selected } } }
                 |> updateSimulation
 
-        ChangeVegetationCarbonSinkCustomValue value ->
-            { model | parametersForm = { parametersForm | vegetationCarbonSinkCustomValue = value } }
+        ChangeVegetationCarbonSinkCustomValue customValue ->
+            { model | parametersForm = { parametersForm | vegetationCarbonSink = { vegetationCarbonSink | customValue = customValue } } }
                 |> updateSimulation
 
-        ChangeWaterVaporConcentration value ->
-            { model | parametersForm = { parametersForm | waterVaporConcentration = value } }
+        ChangeWaterVaporConcentration selected ->
+            { model | parametersForm = { parametersForm | waterVaporConcentration = { waterVaporConcentration | selected = selected } } }
                 |> updateSimulation
 
-        ChangeWaterVaporConcentrationCustomValue value ->
-            { model | parametersForm = { parametersForm | waterVaporConcentrationCustomValue = value } }
+        ChangeWaterVaporConcentrationCustomValue customValue ->
+            { model | parametersForm = { parametersForm | waterVaporConcentration = { waterVaporConcentration | customValue = customValue } } }
                 |> updateSimulation
 
 
@@ -622,15 +634,15 @@ viewEditingEarthSunDistance parametersForm =
             [ Input.radio []
                 { onChange = ChangeEarthSunDistance
                 , options =
-                    [ Input.option ParametersForm.EarthSunDistancePresentDay (text "Present-day distance (100%)")
-                    , Input.option ParametersForm.EarthSunDistanceCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.EarthSunDistancePresentDay) (text "Present-day distance (100%)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.earthSunDistance
+                , selected = Just parametersForm.earthSunDistance.selected
                 , label = Input.labelHidden "Earth-Sun distance"
                 }
             , Input.text []
                 { onChange = ChangeEarthSunDistanceCustomValue
-                , text = parametersForm.earthSunDistanceCustomValue
+                , text = parametersForm.earthSunDistance.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Earth-Sun distance (in percentage of the present-day distance)"
                 }
@@ -646,16 +658,16 @@ viewEditingSolarPower parametersForm =
             [ Input.radio []
                 { onChange = ChangeSolarPower
                 , options =
-                    [ Input.option ParametersForm.SolarPowerPresentDay (text "Present-day power (100%)")
-                    , Input.option ParametersForm.SolarPowerEarthBeginning (text "Same as at the beginning of the Earth history (70%)")
-                    , Input.option ParametersForm.SolarPowerCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.SolarPowerPresentDay) (text "Present-day power (100%)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.SolarPowerEarthBeginning) (text "Same as at the beginning of the Earth history (70%)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.solarPower
+                , selected = Just parametersForm.solarPower.selected
                 , label = Input.labelHidden "Solar Power"
                 }
             , Input.text []
                 { onChange = ChangeSolarPowerCustomValue
-                , text = parametersForm.solarPowerCustomValue
+                , text = parametersForm.solarPower.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Solar power (in percentage of the present-day distance)"
                 }
@@ -671,17 +683,17 @@ viewEditingExcentricity parametersForm =
             [ Input.radio []
                 { onChange = ChangeExcentricity
                 , options =
-                    [ Input.option ParametersForm.ExcentricityPresentDay (text "Present-day excentricity (0.0167)")
-                    , Input.option ParametersForm.ExcentricityMinimum (text "Minimum value (0)")
-                    , Input.option ParametersForm.ExcentricityMaximum (text "Maximum value (0.06)")
-                    , Input.option ParametersForm.ExcentricityCustom (text "OtherValue")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.ExcentricityPresentDay) (text "Present-day excentricity (0.0167)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.ExcentricityMinimum) (text "Minimum value (0)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.ExcentricityMaximum) (text "Maximum value (0.06)")
+                    , Input.option ParametersForm.Custom (text "OtherValue")
                     ]
-                , selected = Just parametersForm.excentricity
+                , selected = Just parametersForm.excentricity.selected
                 , label = Input.labelHidden "Excentricity"
                 }
             , Input.text []
                 { onChange = ChangeExcentricityCustomValue
-                , text = parametersForm.excentricityCustomValue
+                , text = parametersForm.excentricity.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Excentricity"
                 }
@@ -691,27 +703,23 @@ viewEditingExcentricity parametersForm =
 
 viewEditingObliquity : ParametersForm -> Element Msg
 viewEditingObliquity parametersForm =
-    let
-        value =
-            parametersForm.obliquity
-    in
     viewEditingParameter
         { title = "Obliquity"
         , form =
             [ Input.radio []
                 { onChange = ChangeObliquity
                 , options =
-                    [ Input.option ParametersForm.ObliquityPresentDay (text "Present-day obliquity (23.5º)")
-                    , Input.option ParametersForm.ObliquityMinimum (text "Minimum value (21.8º)")
-                    , Input.option ParametersForm.ObliquityMaximum (text "Maximum value (24.4º)")
-                    , Input.option ParametersForm.ObliquityCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.ObliquityPresentDay) (text "Present-day obliquity (23.5º)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.ObliquityMinimum) (text "Minimum value (21.8º)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.ObliquityMaximum) (text "Maximum value (24.4º)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just value
+                , selected = Just parametersForm.obliquity.selected
                 , label = Input.labelHidden "Obliquity"
                 }
             , Input.text []
                 { onChange = ChangeObliquityCustomValue
-                , text = parametersForm.obliquityCustomValue
+                , text = parametersForm.obliquity.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Obliquity (in º)"
                 }
@@ -721,27 +729,23 @@ viewEditingObliquity parametersForm =
 
 viewEditingPrecession : ParametersForm -> Element Msg
 viewEditingPrecession parametersForm =
-    let
-        value =
-            parametersForm.precession
-    in
     viewEditingParameter
         { title = "Precession"
         , form =
             [ Input.radio []
                 { onChange = ChangePrecession
                 , options =
-                    [ Input.option ParametersForm.PrecessionPresentDay (text "Present-day precession (102.7º)")
-                    , Input.option ParametersForm.PrecessionMinimum (text "Minimum value (90º)")
-                    , Input.option ParametersForm.PrecessionMaximum (text "Maximum value (270º)")
-                    , Input.option ParametersForm.PrecessionCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.PrecessionPresentDay) (text "Present-day precession (102.7º)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.PrecessionMinimum) (text "Minimum value (90º)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.PrecessionMaximum) (text "Maximum value (270º)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just value
+                , selected = Just parametersForm.precession.selected
                 , label = Input.labelHidden "Precession"
                 }
             , Input.text []
                 { onChange = ChangePrecessionCustomValue
-                , text = parametersForm.precessionCustomValue
+                , text = parametersForm.precession.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Precession (in º)"
                 }
@@ -775,18 +779,18 @@ viewEditingCo2Concentration parametersForm =
             [ Input.radio []
                 { onChange = ChangeCo2Concentration
                 , options =
-                    [ Input.option ParametersForm.Co2ConcentrationPresentDay (text "Present-day value (405 ppm)")
-                    , Input.option ParametersForm.Co2ConcentrationPreIndustrial (text "Pre-industrial value (280 ppm)")
-                    , Input.option ParametersForm.Co2ConcentrationCretaceous (text "Cretaceous value (1500 ppm)")
-                    , Input.option ParametersForm.Co2ConcentrationEarthBeginning (text "Same as at the beginning of the Earth history (300\u{00A0}000 ppm)")
-                    , Input.option ParametersForm.Co2ConcentrationCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.Co2ConcentrationPresentDay) (text "Present-day value (405 ppm)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.Co2ConcentrationPreIndustrial) (text "Pre-industrial value (280 ppm)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.Co2ConcentrationCretaceous) (text "Cretaceous value (1500 ppm)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.Co2ConcentrationEarthBeginning) (text "Same as at the beginning of the Earth history (300\u{00A0}000 ppm)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.co2Concentration
+                , selected = Just parametersForm.co2Concentration.selected
                 , label = Input.labelHidden "CO2 concentration"
                 }
             , Input.text []
                 { onChange = ChangeCo2ConcentrationCustomValue
-                , text = parametersForm.co2ConcentrationCustomValue
+                , text = parametersForm.co2Concentration.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "CO2 concentration (in ppm)"
                 }
@@ -802,17 +806,17 @@ viewEditingAnthropogenicEmissions parametersForm =
             [ Input.radio []
                 { onChange = ChangeAnthropogenicEmissions
                 , options =
-                    [ Input.option ParametersForm.AnthropogenicEmissionsNull (text "Null (0 GtC/year)")
-                    , Input.option ParametersForm.AnthropogenicEmissionsPresentDay (text "Present-day value (8 GtC/year)")
-                    , Input.option ParametersForm.AnthropogenicEmissionsTwicePresentDay (text "Twice the present-day value (16 GtC/year)")
-                    , Input.option ParametersForm.AnthropogenicEmissionsCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.AnthropogenicEmissionsNull) (text "Null (0 GtC/year)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.AnthropogenicEmissionsPresentDay) (text "Present-day value (8 GtC/year)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.AnthropogenicEmissionsTwicePresentDay) (text "Twice the present-day value (16 GtC/year)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.anthropogenicEmissions
+                , selected = Just parametersForm.anthropogenicEmissions.selected
                 , label = Input.labelHidden "Anthropogenic emissions"
                 }
             , Input.text []
                 { onChange = ChangeAnthropogenicEmissionsCustomValue
-                , text = parametersForm.anthropogenicEmissionsCustomValue
+                , text = parametersForm.anthropogenicEmissions.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Anthropogenic emissions (in GtC/year)"
                 }
@@ -828,16 +832,16 @@ viewEditingVolcanicEmissions parametersForm =
             [ Input.radio []
                 { onChange = ChangeVolcanicEmissions
                 , options =
-                    [ Input.option ParametersForm.VolcanicEmissionsPresentDay (text "Same as present-day (0.083 GtC/year)")
-                    , Input.option ParametersForm.VolcanicEmissionsEarthBeginning (text "Same as at the beginning of the Earth history (0.42 GtC/year)")
-                    , Input.option ParametersForm.VolcanicEmissionsCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.VolcanicEmissionsPresentDay) (text "Same as present-day (0.083 GtC/year)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.VolcanicEmissionsEarthBeginning) (text "Same as at the beginning of the Earth history (0.42 GtC/year)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.volcanicEmissions
+                , selected = Just parametersForm.volcanicEmissions.selected
                 , label = Input.labelHidden "Volcanic emissions"
                 }
             , Input.text []
                 { onChange = ChangeVolcanicEmissionsCustomValue
-                , text = parametersForm.volcanicEmissionsCustomValue
+                , text = parametersForm.volcanicEmissions.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Volcanic emissions (in GtC/year)"
                 }
@@ -853,16 +857,16 @@ viewEditingBiologicalStorage parametersForm =
             [ Input.radio []
                 { onChange = ChangeBiologicalStorage
                 , options =
-                    [ Input.option ParametersForm.BiologicalStoragePresentDay (text "Same as present-day (0 Mt/year/ppm)")
-                    , Input.option ParametersForm.BiologicalStorageCarboniferous (text "Same as during the Carboniferous (0.71 Mt/year/ppm)")
-                    , Input.option ParametersForm.BiologicalStorageCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.BiologicalStoragePresentDay) (text "Same as present-day (0 Mt/year/ppm)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.BiologicalStorageCarboniferous) (text "Same as during the Carboniferous (0.71 Mt/year/ppm)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.biologicalStorage
+                , selected = Just parametersForm.biologicalStorage.selected
                 , label = Input.labelHidden "Biological storage"
                 }
             , Input.text []
                 { onChange = ChangeBiologicalStorageCustomValue
-                , text = parametersForm.biologicalStorageCustomValue
+                , text = parametersForm.biologicalStorage.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Biological storage (in Mt/year/ppm)"
                 }
@@ -878,15 +882,15 @@ viewEditingContinentalAlteration parametersForm =
             [ Input.radio []
                 { onChange = ChangeContinentalAlteration
                 , options =
-                    [ Input.option ParametersForm.ContinentalAlterationPresentDay (text "Same as present-day (100%)")
-                    , Input.option ParametersForm.ContinentalAlterationCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.ContinentalAlterationPresentDay) (text "Same as present-day (100%)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.continentalAlteration
+                , selected = Just parametersForm.continentalAlteration.selected
                 , label = Input.labelHidden "Continental alteration"
                 }
             , Input.text []
                 { onChange = ChangeContinentalAlterationCustomValue
-                , text = parametersForm.continentalAlterationCustomValue
+                , text = parametersForm.continentalAlteration.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Continental alteration (in %)"
                 }
@@ -902,19 +906,19 @@ viewEditingPlanetaryAlbedo parametersForm =
             [ Input.radio []
                 { onChange = ChangePlanetaryAlbedo
                 , options =
-                    [ Input.option ParametersForm.PlanetaryAlbedoComputed (text "Computed as a function of temperature, permitting the feedback")
-                    , Input.option ParametersForm.PlanetaryAlbedoPresentDay (text "Constant as its present-day value (33%)")
-                    , Input.option ParametersForm.PlanetaryAlbedoPreIndustrial (text "Constant as its pre-industrial value (33%)")
-                    , Input.option ParametersForm.PlanetaryAlbedoSameAsSoil (text "Constant at the value of a soil (25%)")
-                    , Input.option ParametersForm.PlanetaryAlbedoSameAsIce (text "Constant at the value of ice (90%)")
-                    , Input.option ParametersForm.PlanetaryAlbedoCustom (text "Constant at another value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.PlanetaryAlbedoComputed) (text "Computed as a function of temperature, permitting the feedback")
+                    , Input.option (ParametersForm.Predefined ParametersForm.PlanetaryAlbedoPresentDay) (text "Constant as its present-day value (33%)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.PlanetaryAlbedoPreIndustrial) (text "Constant as its pre-industrial value (33%)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.PlanetaryAlbedoSameAsSoil) (text "Constant at the value of a soil (25%)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.PlanetaryAlbedoSameAsIce) (text "Constant at the value of ice (90%)")
+                    , Input.option ParametersForm.Custom (text "Constant at another value")
                     ]
-                , selected = Just parametersForm.planetaryAlbedo
+                , selected = Just parametersForm.planetaryAlbedo.selected
                 , label = Input.labelHidden "Planetary albedo"
                 }
             , Input.text []
                 { onChange = ChangePlanetaryAlbedoCustomValue
-                , text = parametersForm.planetaryAlbedoCustomValue
+                , text = parametersForm.planetaryAlbedo.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Planetary albedo (in %)"
                 }
@@ -930,17 +934,17 @@ viewEditingOceanicCarbonSink parametersForm =
             [ Input.radio []
                 { onChange = ChangeOceanicCarbonSink
                 , options =
-                    [ Input.option ParametersForm.OceanicCarbonSinkNeglected (text "Neglect the oceanic sink")
-                    , Input.option ParametersForm.OceanicCarbonSinkComputed (text "The oceanic carbon sink is computed as a function of temperature")
-                    , Input.option ParametersForm.OceanicCarbonSinkConstantPresentDay (text "The oceanic carbon sink does not depend on temperature and remains as today")
-                    , Input.option ParametersForm.OceanicCarbonSinkConstantCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.OceanicCarbonSinkNeglected) (text "Neglect the oceanic sink")
+                    , Input.option (ParametersForm.Predefined ParametersForm.OceanicCarbonSinkComputed) (text "The oceanic carbon sink is computed as a function of temperature")
+                    , Input.option (ParametersForm.Predefined ParametersForm.OceanicCarbonSinkConstantPresentDay) (text "The oceanic carbon sink does not depend on temperature and remains as today")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.oceanicCarbonSink
+                , selected = Just parametersForm.oceanicCarbonSink.selected
                 , label = Input.labelHidden "Oceanic carbon sink"
                 }
             , Input.text []
                 { onChange = ChangeOceanicCarbonSinkCustomValue
-                , text = parametersForm.oceanicCarbonSinkCustomValue
+                , text = parametersForm.oceanicCarbonSink.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Oceanic carbon sink (in %)"
                 }
@@ -956,16 +960,16 @@ viewEditingVegetationCarbonSink parametersForm =
             [ Input.radio []
                 { onChange = ChangeVegetationCarbonSink
                 , options =
-                    [ Input.option ParametersForm.VegetationCarbonSinkNeglected (text "Neglect the CO2 fluxes associated with the vegetation")
-                    , Input.option ParametersForm.VegetationCarbonSinkAsToday (text "The vegetation mops up 35% of anthropogenic CO2 emissions, as today")
-                    , Input.option ParametersForm.VegetationCarbonSinkCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.VegetationCarbonSinkNeglected) (text "Neglect the CO2 fluxes associated with the vegetation")
+                    , Input.option (ParametersForm.Predefined ParametersForm.VegetationCarbonSinkAsToday) (text "The vegetation mops up 35% of anthropogenic CO2 emissions, as today")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.vegetationCarbonSink
+                , selected = Just parametersForm.vegetationCarbonSink.selected
                 , label = Input.labelHidden "Vegetation carbon sink"
                 }
             , Input.text []
                 { onChange = ChangeVegetationCarbonSinkCustomValue
-                , text = parametersForm.vegetationCarbonSinkCustomValue
+                , text = parametersForm.vegetationCarbonSink.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Vegetation carbon sink (in %)"
                 }
@@ -981,17 +985,17 @@ viewEditingWaterVaporConcentration parametersForm =
             [ Input.radio []
                 { onChange = ChangeWaterVaporConcentration
                 , options =
-                    [ Input.option ParametersForm.WaterVaporConcentrationComputed (text "Computed as a function of temperature")
-                    , Input.option ParametersForm.WaterVaporConcentrationConstantPresentDay (text "Constant at the present-day value (105.7%)")
-                    , Input.option ParametersForm.WaterVaporConcentrationConstantPreIndustrial (text "Constant at the pre-industrial value (100%)")
-                    , Input.option ParametersForm.WaterVaporConcentrationConstantCustom (text "Other value")
+                    [ Input.option (ParametersForm.Predefined ParametersForm.WaterVaporConcentrationComputed) (text "Computed as a function of temperature")
+                    , Input.option (ParametersForm.Predefined ParametersForm.WaterVaporConcentrationConstantPresentDay) (text "Constant at the present-day value (105.7%)")
+                    , Input.option (ParametersForm.Predefined ParametersForm.WaterVaporConcentrationConstantPreIndustrial) (text "Constant at the pre-industrial value (100%)")
+                    , Input.option ParametersForm.Custom (text "Other value")
                     ]
-                , selected = Just parametersForm.waterVaporConcentration
+                , selected = Just parametersForm.waterVaporConcentration.selected
                 , label = Input.labelHidden "Water vapor concentration (in %)"
                 }
             , Input.text []
                 { onChange = ChangeWaterVaporConcentrationCustomValue
-                , text = parametersForm.waterVaporConcentrationCustomValue
+                , text = parametersForm.waterVaporConcentration.customValue
                 , placeholder = Nothing
                 , label = Input.labelAbove [] <| text "Water vapor concentration (in %)"
                 }

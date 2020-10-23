@@ -25,6 +25,7 @@ import LineChart.Interpolation as Interpolation
 import LineChart.Junk as Junk
 import LineChart.Legends as Legends
 import LineChart.Line as Line
+import Ui.Data.Parameter as Parameter exposing (Parameter)
 import Ui.Data.ParametersForm as ParametersForm exposing (ParametersForm)
 
 
@@ -43,29 +44,9 @@ main =
 
 type alias Model =
     { simulation : ClimateSimulation
-    , editing : Maybe ParameterName
+    , editing : Maybe Parameter
     , parametersForm : ParametersForm
     }
-
-
-type ParameterName
-    = InitialState
-    | SimulationLength
-    | EarthSunDistance
-    | SolarPower
-    | Excentricity
-    | Obliquity
-    | Precession
-    | Co2
-    | Co2Concentration
-    | AnthropogenicEmissions
-    | VolcanicEmissions
-    | BiologicalStorage
-    | ContinentalAlteration
-    | PlanetaryAlbedo
-    | OceanicCarbonSink
-    | VegetationCarbonSink
-    | WaterVaporConcentration
 
 
 init : Model
@@ -90,7 +71,7 @@ init =
 
 
 type Msg
-    = EditParameter (Maybe ParameterName)
+    = EditParameter (Maybe Parameter)
     | ChangeInitialState Parameters.InitialState
     | ChangeSimulationLength String
     | ChangeEarthSunDistance ParametersForm.EarthSunDistance
@@ -348,7 +329,7 @@ viewParameterList model =
         parameters =
             model.simulation.parameters
 
-        selectedParameter : Maybe ParameterName
+        selectedParameter : Maybe Parameter
         selectedParameter =
             model.editing
     in
@@ -364,35 +345,35 @@ viewParameterList model =
             , Element.clipX
             , Element.scrollbarY
             ]
-            [ viewParameterSummary InitialState selectedParameter "📅" "Initial state" <|
+            [ viewParameterSummary Parameter.InitialState selectedParameter <|
                 case parameters.initialState of
                     Parameters.PreIndustrial ->
                         "pre-industrial"
 
                     Parameters.Now ->
                         "present-day"
-            , viewParameterSummary SimulationLength selectedParameter "⏱" "Simulation length" <|
+            , viewParameterSummary Parameter.SimulationLength selectedParameter <|
                 String.fromInt (Duration.intoYears parameters.duration)
                     ++ " years"
             , viewParameterSection "Astronomical parameters"
-                [ viewParameterSummary EarthSunDistance selectedParameter "☀️" "Earth-Sun distance" <|
+                [ viewParameterSummary Parameter.EarthSunDistance selectedParameter <|
                     String.fromFloat parameters.distance_ts_value
                         ++ "% of present-day"
-                , viewParameterSummary SolarPower selectedParameter "🔋" "Solar power" <|
+                , viewParameterSummary Parameter.SolarPower selectedParameter <|
                     String.fromFloat parameters.puissance_soleil_value
                         ++ "% of present-day"
-                , viewParameterSummary Excentricity selectedParameter "🌍" "Excentricity" <|
+                , viewParameterSummary Parameter.Excentricity selectedParameter <|
                     String.fromFloat parameters.excentricite_value
-                , viewParameterSummary Obliquity selectedParameter "🌍" "Obliquity" <|
+                , viewParameterSummary Parameter.Obliquity selectedParameter <|
                     String.fromFloat parameters.obliquite_value
                         ++ "º"
-                , viewParameterSummary Precession selectedParameter "🌍" "Precession" <|
+                , viewParameterSummary Parameter.Precession selectedParameter <|
                     String.fromFloat parameters.precession_value
                         ++ "º"
                 ]
             , viewParameterSection "CO2 emissions" <|
                 List.concat
-                    [ [ viewParameterSummary Co2 selectedParameter "☁️" "CO2" <|
+                    [ [ viewParameterSummary Parameter.Co2 selectedParameter <|
                             if parameters.fixed_concentration then
                                 "constant"
 
@@ -401,34 +382,34 @@ viewParameterList model =
                       ]
                     , case model.parametersForm.co2 of
                         ParametersForm.Co2Constant ->
-                            [ viewParameterSummary Co2Concentration selectedParameter "💨" "CO2 concentration" <|
+                            [ viewParameterSummary Parameter.Co2Concentration selectedParameter <|
                                 String.fromFloat parameters.coo_concentr_value
                                     ++ " ppm"
                             ]
 
                         ParametersForm.Co2SourcesAndSinks ->
-                            [ viewParameterSummary AnthropogenicEmissions selectedParameter "👨" "Anthropogenic emissions" <|
+                            [ viewParameterSummary Parameter.AnthropogenicEmissions selectedParameter <|
                                 String.fromFloat parameters.emit_anthro_coo_value
                                     ++ " GtC/year"
-                            , viewParameterSummary VolcanicEmissions selectedParameter "🌋" "Volcanic emissions" <|
+                            , viewParameterSummary Parameter.VolcanicEmissions selectedParameter <|
                                 String.fromFloat parameters.volcan_value
                                     ++ " GtC/year"
-                            , viewParameterSummary BiologicalStorage selectedParameter "🛢" "Biological storage" <|
+                            , viewParameterSummary Parameter.BiologicalStorage selectedParameter <|
                                 String.fromFloat parameters.stockage_biologique_value
                                     ++ " Mt/year/ppm"
-                            , viewParameterSummary ContinentalAlteration selectedParameter "⛰" "Continental alteration" <|
+                            , viewParameterSummary Parameter.ContinentalAlteration selectedParameter <|
                                 String.fromFloat parameters.alteration_value
                                     ++ "% relatively to present-day"
                             ]
                     ]
             , viewParameterSection "Climate feedbacks"
-                [ viewParameterSummary PlanetaryAlbedo selectedParameter "✨" "Planetary albedo" <|
+                [ viewParameterSummary Parameter.PlanetaryAlbedo selectedParameter <|
                     if parameters.fixed_albedo then
                         String.fromFloat parameters.albedo_value ++ "%"
 
                     else
                         "depends on temperature"
-                , viewParameterSummary OceanicCarbonSink selectedParameter "🌊" "Oceanic carbon sink" <|
+                , viewParameterSummary Parameter.OceanicCarbonSink selectedParameter <|
                     if parameters.debranche_ocean then
                         "neglected"
 
@@ -437,13 +418,13 @@ viewParameterList model =
 
                     else
                         "depends on temperature"
-                , viewParameterSummary VegetationCarbonSink selectedParameter "🌳" "Vegetation carbon sink" <|
+                , viewParameterSummary Parameter.VegetationCarbonSink selectedParameter <|
                     if parameters.debranche_biologie then
                         "neglected"
 
                     else
                         String.fromFloat parameters.puit_bio_value ++ "%"
-                , viewParameterSummary WaterVaporConcentration selectedParameter "💧" "Water vapor concentration" <|
+                , viewParameterSummary Parameter.WaterVaporConcentration selectedParameter <|
                     if parameters.fixed_eau then
                         String.fromFloat parameters.rapport_H2O_value
                             ++ "% of present-day"
@@ -482,11 +463,11 @@ viewParameterSection title contents =
         ]
 
 
-viewParameterSummary : ParameterName -> Maybe ParameterName -> String -> String -> String -> Element Msg
-viewParameterSummary parameterName selectedParameter icon label value =
+viewParameterSummary : Parameter -> Maybe Parameter -> String -> Element Msg
+viewParameterSummary parameter selectedParameter value =
     let
         isSelected =
-            selectedParameter == Just parameterName
+            selectedParameter == Just parameter
 
         highlightedWhen condition =
             if condition then
@@ -502,7 +483,7 @@ viewParameterSummary parameterName selectedParameter icon label value =
                         Nothing
 
                      else
-                        Just parameterName
+                        Just parameter
                     )
                 )
     in
@@ -517,67 +498,67 @@ viewParameterSummary parameterName selectedParameter icon label value =
             ]
         , toggleEditingOnClick
         ]
-        [ el [ Element.alignTop ] (text icon)
+        [ el [ Element.alignTop ] (Parameter.icon parameter)
         , Element.wrappedRow [ Element.width Element.fill, Element.spacing 10 ]
-            [ text (label ++ ":")
+            [ text (Parameter.name parameter ++ ":")
             , el [ Font.color colorDarkGray ]
                 (text value)
             ]
         ]
 
 
-viewEditing : ParameterName -> ParametersForm -> Element Msg
-viewEditing parameterName parametersForm =
-    case parameterName of
-        InitialState ->
+viewEditing : Parameter -> ParametersForm -> Element Msg
+viewEditing parameter parametersForm =
+    case parameter of
+        Parameter.InitialState ->
             viewEditingInitialState parametersForm
 
-        SimulationLength ->
+        Parameter.SimulationLength ->
             viewEditingSimulationLength parametersForm
 
-        EarthSunDistance ->
+        Parameter.EarthSunDistance ->
             viewEditingEarthSunDistance parametersForm
 
-        SolarPower ->
+        Parameter.SolarPower ->
             viewEditingSolarPower parametersForm
 
-        Excentricity ->
+        Parameter.Excentricity ->
             viewEditingExcentricity parametersForm
 
-        Obliquity ->
+        Parameter.Obliquity ->
             viewEditingObliquity parametersForm
 
-        Precession ->
+        Parameter.Precession ->
             viewEditingPrecession parametersForm
 
-        Co2 ->
+        Parameter.Co2 ->
             viewEditingCo2 parametersForm
 
-        Co2Concentration ->
+        Parameter.Co2Concentration ->
             viewEditingCo2Concentration parametersForm
 
-        AnthropogenicEmissions ->
+        Parameter.AnthropogenicEmissions ->
             viewEditingAnthropogenicEmissions parametersForm
 
-        VolcanicEmissions ->
+        Parameter.VolcanicEmissions ->
             viewEditingVolcanicEmissions parametersForm
 
-        BiologicalStorage ->
+        Parameter.BiologicalStorage ->
             viewEditingBiologicalStorage parametersForm
 
-        ContinentalAlteration ->
+        Parameter.ContinentalAlteration ->
             viewEditingContinentalAlteration parametersForm
 
-        PlanetaryAlbedo ->
+        Parameter.PlanetaryAlbedo ->
             viewEditingPlanetaryAlbedo parametersForm
 
-        OceanicCarbonSink ->
+        Parameter.OceanicCarbonSink ->
             viewEditingOceanicCarbonSink parametersForm
 
-        VegetationCarbonSink ->
+        Parameter.VegetationCarbonSink ->
             viewEditingVegetationCarbonSink parametersForm
 
-        WaterVaporConcentration ->
+        Parameter.WaterVaporConcentration ->
             viewEditingWaterVaporConcentration parametersForm
 
 
